@@ -12,6 +12,7 @@ ConnectionHandler::ConnectionHandler(string host, short port) : host_(host), por
                                                                 socket_(io_service_) {}
 
 ConnectionHandler::~ConnectionHandler() {
+	int i  = 0;
 	close();
 }
 

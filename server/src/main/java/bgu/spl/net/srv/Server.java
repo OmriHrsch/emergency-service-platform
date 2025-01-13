@@ -1,5 +1,5 @@
 package bgu.spl.net.srv;
-//This is a test 
+//This is a test - received 
 import bgu.spl.net.api.MessageEncoderDecoder;
 import bgu.spl.net.api.MessagingProtocol;
 import java.io.Closeable;

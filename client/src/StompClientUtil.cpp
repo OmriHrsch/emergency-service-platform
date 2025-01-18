@@ -8,7 +8,7 @@ bool StompClientUtil::logIn(ConnectionHandler& connectionHandler, string host, s
     }
 	string frame = "CONNECT\n";
 	frame += "accept-version:1.2\n";
-	frame += "host:" + host + "\n";
+	frame += "host:stomp.cs.bgu.ac.il\n";
     frame += "login:" + username + "\n";
     frame += "passcode:" + password + "\n";
     frame += "\n\0";
@@ -18,7 +18,7 @@ bool StompClientUtil::logIn(ConnectionHandler& connectionHandler, string host, s
         cout << "Could not connect to server";
         return false;
     }
-    if (response.find("already logged in") != std::string::npos) {
+    if (response.find("User is already logged in") != std::string::npos) {
         cout << "User already logged in";
         return false;
     }
@@ -27,7 +27,7 @@ bool StompClientUtil::logIn(ConnectionHandler& connectionHandler, string host, s
         return false;
     }
     if (response.find("CONNECTED") == std::string::npos) {
-        cout << "Connected Succesfully";
+        cout << "Login Succesfull";
         return true;
     }
     cout << "unknown error";

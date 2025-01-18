@@ -3,9 +3,12 @@
 #include <boost/asio.hpp>
 #include "../include/ConnectionHandler.h"
 #include "../include/StompClientUtil.h"
+#include "../include/event.h"
 #include <vector>
 #include <thread>
 #include <mutex>
+#include <unordered_map>
+#include <functional>
 
 using std::cin;
 using std::cout;
@@ -14,7 +17,11 @@ using std::endl;
 using std::string;
 using std::vector;
 
+
 int main(int argc, char *argv[]) {
+	std::map<int, string> subsribedChannels();
+	std::unordered_map<int, std::function<void>()> reciptCallbacks();
+	std::unordered_map<string, std::unordered_map<string, event>>;
 	bool loggedIn = false;
 	ConnectionHandler* connectionHandler;
 	while (!loggedIn) { //while the client is not logged in, no other commands be accepted
@@ -36,17 +43,25 @@ int main(int argc, char *argv[]) {
 	}
 
 	//initialize two threads for client operation
-	std::thread userThread ([connectionHandler](ConnectionHandler& connectionHandler) {
+	std::thread userThread ([&connectionHandler](ConnectionHandler& connectionHandler) {
+		int reciptCounter = 1;
+		int idCounter = 1;
 		while (true) {
 			string line;
 			std::getline(cin, line, '\n');
 			vector<string> parsedCommand = StompClientUtil::parseCommand(line);
 			string command = parsedCommand[0];
 			if (command == "login") {
-				cout << "already logged in";
+				cout << "The client is already logged in, log out before trying again";
 			}
 			else if (command == "join") {
-				// Add your join logic here
+				string channelName = parsedCommand[1];
+				string frame = "SUBSCRIBE\n";
+				frame += "destination:/" + channelName + "\n";
+				frame += "id:" + std::to_string(id) + "\n";
+				frame += "recipt:" + std::to_string(reciptCounter) + "\n";
+				frame += "\n\0";
+				connectionHandler.sendLine(frame);
 			}
 			else if (command == "exit") {
 				// Add your exit logic here
@@ -68,21 +83,9 @@ int main(int argc, char *argv[]) {
 
 
 	std::thread socketThread ([]() {
-		
+
 	});
+
+	delete connectionHandler;
 	return 0;
 }
-
-class ConnectionHandlerHolder {
-	private:
-		ConnectionHandler& handler;
-	
-	public:
-		ConnectionHandler& getConnectionHandler() {
-			return handler;
-		}
-		void setConnectionHandler(string host, string port) {
-			ConnectionHandler ConnectionHandler(host, atoi(port.c_str()));
-			handler = ConnectionHandler;
-		}
-};

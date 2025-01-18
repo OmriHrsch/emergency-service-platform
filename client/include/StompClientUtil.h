@@ -18,4 +18,5 @@ class StompClientUtil {
     public:
         static bool logIn(ConnectionHandler& connectionHandler, string host, string username, string password);
         static vector<string> parseCommand(string command);
+        static vector<string> parseAnswer(string answer);
 };

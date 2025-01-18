@@ -55,3 +55,38 @@ vector<string> StompClientUtil::parseCommand(string command)
     parseCommand.push_back(nextWord);
     return vector<string>();
 }
+
+vector<string> StompClientUtil::parseAnswer(string answer) { //Parsing that would help seperating numbers from the ':' preceeding them 
+    vector<string> parseAnswer = {};
+    int index = 0;
+
+    // Skip leading spaces
+    while (index < answer.size() && answer[index] == ' ') {
+        index++;
+    }
+
+    string nextWord = "";
+    while (index < answer.size()) {
+        if (answer[index] == ' ' || answer[index] == '\n') { 
+            if (!nextWord.empty()) {
+                parseAnswer.push_back(nextWord);
+                nextWord = "";
+            }
+        } else if (answer[index] == ':') { // Handle ":" specifically
+            if (!nextWord.empty()) {
+                parseAnswer.push_back(nextWord); 
+                nextWord = ""; 
+            }
+        } else {
+            nextWord += answer[index];
+        }
+        index++;
+    }
+
+    // Add the last word (or number) if not empty
+    if (!nextWord.empty()) {
+        parseAnswer.push_back(nextWord);
+    }
+
+    return parseAnswer;
+}

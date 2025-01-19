@@ -4,6 +4,7 @@
 #include <iostream>
 #include <boost/asio.hpp>
 #include "../include/ConnectionHandler.h"
+#include "../include/StompFrame.h"
 #include <vector>
 
 using std::cin;
@@ -19,5 +20,5 @@ class StompClientUtil {
         static bool logIn(ConnectionHandler& connectionHandler, string host, string username, string password);
         static vector<string> parseCommand(string command);
         static vector<string> parseAnswer(string answer);
-        static void loginLogic(ConnectionHandler* connectionHandler, string& username);
+        static void loginLogic(ConnectionHandler& connectionHandler, string& username);
 };

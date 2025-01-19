@@ -1,4 +1,6 @@
 #include "../include/ConnectionHandler.h"
+#include "../include/StompFrame.h"
+#include "ConnectionHandler.h"
 
 using boost::asio::ip::tcp;
 
@@ -35,6 +37,16 @@ bool ConnectionHandler::connect() {
 bool ConnectionHandler::getBytes(char bytes[], unsigned int bytesToRead) {
 	size_t tmp = 0;
 	boost::system::error_code error;
+	if (error == boost::asio::error::eof) {
+		std::cerr << "Connection closed by the server." << std::endl;
+		return false;
+	}
+	if (!socket_.is_open()) {
+		std::cerr << "Error: Socket is not open." << std::endl;
+		return false;
+	}
+	
+
 	try {
 		while (!error && bytesToRead > tmp) {
 			tmp += socket_.read_some(boost::asio::buffer(bytes + tmp, bytesToRead - tmp), error);;
@@ -105,4 +117,39 @@ void ConnectionHandler::close() {
 	} catch (...) {
 		std::cout << "closing failed: connection already closed" << std::endl;
 	}
+}
+bool ConnectionHandler::isSocketOpen()
+{
+    return socket_.is_open();
+}
+
+void ConnectionHandler::setHostPort(std::string host, short port)
+{
+	this->host_ = host;
+	this->port_ = port;
+}
+
+bool ConnectionHandler::sendFrame(std::string &line)
+{
+    if (!sendLine(line)) {return false;}
+	return sendBytes({"\0"}, 1);
+}
+
+bool ConnectionHandler::readFrame(std::string &line){
+	string holder = "";
+	int hasBody = 0;
+	if(!getLine(holder)){return false;}
+	line = line + holder;
+	if (holder == "MESSAGE" || holder == "ERROR" || holder == "SEND") {
+		hasBody++;
+	}
+	while (hasBody >= 0) {
+		holder.clear();
+		if(!getLine(holder)){return false;}
+		line = line + holder;
+		if (holder == "\n" || holder == "\0" || holder == "") {
+			hasBody--;
+		}
+	}
+	return true;
 }

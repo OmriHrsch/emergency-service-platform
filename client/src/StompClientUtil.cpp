@@ -12,26 +12,34 @@ bool StompClientUtil::logIn(ConnectionHandler& connectionHandler, string host, s
     frame += "host:stomp.cs.bgu.ac.il\n";
     frame += "login:" + username + "\n";
     frame += "passcode:" + password + "\n";
-    connectionHandler.sendLine(frame); 
-    string response = "";
-    if (!connectionHandler.getLine(response)) {
+    frame += "\n"; // End headers with a blank line
+    connectionHandler.sendFrame(frame);
+    // if (!connectionHandler.sendBytes(frame.c_str(), frame.size())) {
+    //     std::cerr << "Failed to send frame body." << std::endl;
+    // }
+
+    // if (!connectionHandler.sendBytes("\0", 1)) { // Send NULL byte explicitly
+    //     std::cerr << "Failed to send NULL byte." << std::endl;
+    // } 
+    string response;
+    if (!connectionHandler.readFrame(response)) {
         cout << "Could not connect to server \n";
         return false;
     }
-    cout << "server responed";
-    if (response.find("User is already logged in") != std::string::npos) {
-        cout << "User already logged in\n";
-        return false;
-    }
-    if (response.find("Wrong password") != std::string::npos) {
-        cout << "Wrong password\n";
-        return false;
-    }
-    if (response.find("CONNECTED") != std::string::npos) {
-        cout << "Login Succesfull";
+    StompFrame stompFrame(response);
+    // if (stompFrame.getCommand() != "User is already logged in") {
+    //     cout << "User already logged in\n";
+    //     return false;
+    // }
+    // if (stompFrame.getCommand() == "Wrong password" != std::string::npos) {
+    //     cout << "Wrong password\n";
+    //     return false;
+    // }
+    if (stompFrame.getCommand() == "CONNECTED") {
+        cout << "Login Succesfull\n";
         return true;
     }
-    cout << "unknown error";
+    cout << "unknown error\n";
     return false;
 }
 
@@ -92,9 +100,8 @@ vector<string> StompClientUtil::parseAnswer(string answer) { //Parsing that woul
     return parseAnswer;
 }
 
-void StompClientUtil::loginLogic(ConnectionHandler *connectionHandler, string &username)
+void StompClientUtil::loginLogic(ConnectionHandler& connectionHandler, string &username)
 {
-    //delete connectionHandler;
     bool loggedIn = false;
     while (!loggedIn) { //while the client is not logged in, no other commands be accepted
 		string line;
@@ -110,8 +117,7 @@ void StompClientUtil::loginLogic(ConnectionHandler *connectionHandler, string &u
 		string port = parsedCommand[1].substr(index + 1);
 		username = parsedCommand[2];
 		string password = parsedCommand[3];
-		connectionHandler = new ConnectionHandler(host, atoi(port.c_str()));
-		loggedIn = StompClientUtil::logIn(*connectionHandler, host, username, password);
+		connectionHandler.setHostPort(host, atoi(port.c_str()));
+		loggedIn = StompClientUtil::logIn(connectionHandler, host, username, password);
 	}
-    cout << "logged in successfully!";
 }

@@ -23,4 +23,5 @@ class StompFrame {
         const map<string, string>& getHeader() const;
         const string& getBody() const; 
         static vector<string> str_split(string& word, char delimiter);
+        const string& toString(string& frameString);
 };

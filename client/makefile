@@ -12,6 +12,7 @@ link:
 
 run:
 	bin/StompEMIlient
+	login 127.0.0.1:116 tom 123
 
 EchoClient: bin/ConnectionHandler.o bin/echoClient.o
 	g++ -o bin/EchoClient bin/ConnectionHandler.o bin/echoClient.o $(LDFLAGS)

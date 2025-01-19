@@ -17,6 +17,17 @@ vector<string> StompFrame::str_split(string &word, char delimiter)
     return toReturn;
 }
 
+const string &StompFrame::toString(string& frameString)
+{
+    frameString = command + "\n";
+    for (const auto &pair : header) {
+        frameString += pair.first + ":" + pair.second + "\n";
+    }
+    frameString += "\n";
+    frameString += body;
+    return frameString;
+}
+
 StompFrame::StompFrame(string &frameString)
     : command(""), header(), body("") {
     stringstream ss(frameString);

@@ -4,6 +4,7 @@
 #include "../include/ConnectionHandler.h"
 #include "../include/StompClientUtil.h"
 #include "../include/event.h"
+#include "../include/StompFrame.h"
 #include <vector>
 #include <thread>
 #include <mutex>
@@ -23,28 +24,12 @@ int main(int argc, char *argv[]) {
 	std::unordered_map<string, int> subscribedChannels;
 	std::unordered_map<int, std::function<bool()>> reciptCallbacks;
 	std::unordered_map<string, std::unordered_map<string, vector<Event>>> eventMap;
-	bool loggedIn = false;
-	ConnectionHandler* connectionHandler;
-	while (!loggedIn) { //while the client is not logged in, no other commands be accepted
-		string line;
-		std::getline(cin, line, '\n');
-		vector<string> parsedCommand = StompClientUtil::parseCommand(line);
-		string command = parsedCommand[0];
-		if (command != "login") {
-			cout << "you should login first";
-			continue;
-		}
-		int index = parsedCommand[1].find(':');
-		string host = parsedCommand[1].substr(0, index);
-		string port = parsedCommand[1].substr(index + 1);
-		username = parsedCommand[2];
-		string password = parsedCommand[3];
-		connectionHandler = new ConnectionHandler(host, atoi(port.c_str()));
-		loggedIn = StompClientUtil::logIn(*connectionHandler, host, username, password);
-	}
+	ConnectionHandler* connectionHandler = new ConnectionHandler("1.1.1.1", 1);
+	StompClientUtil::loginLogic(connectionHandler, username); //this method takes care for logic operation 
+
 
 	//initialize two threads for client operation
-	std::thread userThread ([connectionHandler, subscribedChannels, reciptCallbacks, eventMap, username]() mutable {
+	std::thread userThread ([&connectionHandler, subscribedChannels, reciptCallbacks, eventMap, username]() mutable {
 		int reciptCounter = 1;
 		int idCounter = 1;
 		while (true) {
@@ -86,22 +71,35 @@ int main(int argc, char *argv[]) {
 					eventMap[parsedReport.channel_name].insert({username, vector<Event>()});
 				}
 				for (Event event: parsedReport.events) {
+					event.setEventOwnerUser(username);
 					eventMap[parsedReport.channel_name][username].push_back(event);
 					string frame = "SEND\n";
-					frame += "destination:/" + event.get_channel_name() + "\n\n";
-					frame += "user:" + username + "\n";
-					frame += "city:" + event.get_city() + "\n";
-					
+					frame += event.toString();
+					frame += "\n\0";
 				}
 			}
 			else if (command == "summary") {
-				// Add your summary logic here
+				string channelName = parsedCommand[1];
+				string user = parsedCommand[2];
+				string file = parsedCommand[3];
+				if ((!eventMap.count(channelName)) && (!eventMap[channelName].count(user))) {
+					for (Event e: eventMap[channelName][user]) {
+						cout << e.toString();
+					}
+				}
 			}
 			else if (command == "logout") {
-				// Add your logout logic here
+				string frame = "DISCONNECT\n";
+				frame += "recipt:" + std::to_string(reciptCounter) + "\n";
+				frame += "\n\0";
+				reciptCallbacks.insert({reciptCounter, [connectionHandler]() mutable {
+					connectionHandler->close();
+					return false; 
+				}});
+				reciptCounter++;
 			}
 			else {
-				// Handle unknown commands
+				cout << "Omer Atzili Ben Zona";
 			}
 		}
 	});
@@ -117,16 +115,23 @@ int main(int argc, char *argv[]) {
 				error = true;
 				break;
 			}
-			vector<string> parseAnswer = StompClientUtil::parseAnswer(line);
-			string frameType = parseAnswer[0];
-			int receiptID = std::stoi(parseAnswer[4]);
-			if (frameType == "RECEIPT"){
+			StompFrame frame(line);
+			if (frame.getCommand() == "RECEIPT"){
+				int receiptID = std::stoi(frame.getHeader().at("receipt - id"));
 				connected = reciptCallbacks[receiptID]();			
 			}
-			else if(frameType == "MESSAGE"){
-				
+			else if(frame.getCommand() == "MESSAGE"){
+				string topic = frame.getHeader().at("destination");
+				Event event(frame.getBody());
+				string user = event.getEventOwnerUser();
+				if (!eventMap.count(topic)) {
+					eventMap.insert({topic, std::unordered_map<string, vector<Event>>()});
+				}
+				if(!eventMap[topic].count(user)) {
+					eventMap[topic].insert({user, vector<Event>()});
+				}
 			}
-			else if (frameType == "ERROR"){
+			else if (frame.getCommand() == "ERROR"){
 				connectionHandler->close();
 				connected = false, error = true;
 			}
@@ -135,7 +140,9 @@ int main(int argc, char *argv[]) {
 			
 		}
 	});
-
+	userThread.join();
+	socketThread.join();
 	delete connectionHandler;
 	return 0;
 }
+

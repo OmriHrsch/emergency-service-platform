@@ -1,5 +1,6 @@
 #include "../include/event.h"
 #include "../include/json.hpp"
+#include "../include/StompFrame.h"
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -8,7 +9,7 @@
 #include <sstream>
 #include <cstring>
 
-#include "../include/keyboardInput.h"
+
 
 using namespace std;
 using json = nlohmann::json;
@@ -57,6 +58,37 @@ const std::map<std::string, std::string> &Event::get_general_information() const
     return this->general_information;
 }
 
+std::string Event::toString() const
+{
+    std::ostringstream oss;
+
+    // Add user
+    oss << "user:" << eventOwnerUser << "\n";
+
+    // Add channel name
+    oss << "channel name:" << channel_name << "\n";
+
+    // Add city
+    oss << "city:" << city << "\n";
+
+    // Add event name
+    oss << "event name:" << name << "\n";
+
+    // Add date time
+    oss << "date time:" << date_time << "\n";
+
+    // Add general information
+    oss << "general information:\n";
+    for (const auto &pair : general_information) {
+        oss << " " << pair.first << ":" << pair.second << "\n";
+    }
+
+    // Add description
+    oss << "description:\n" << description;
+
+    return oss.str();
+}
+
 const std::string &Event::get_description() const
 {
     return this->description;
@@ -72,9 +104,8 @@ Event::Event(const std::string &frame_body): channel_name(""), city(""),
     map<string, string> general_information_from_string;
     bool inGeneralInformation = false;
     while(getline(ss,line,'\n')){
-        vector<string> lineArgs;
         if(line.find(':') != string::npos) {
-            split_str(line, ':', lineArgs);
+            vector<string> lineArgs = StompFrame::str_split(line, ':');
             string key = lineArgs.at(0);
             string val;
             if(lineArgs.size() == 2) {

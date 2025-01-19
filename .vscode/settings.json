@@ -72,5 +72,8 @@
         "cinttypes": "cpp",
         "*.ipp": "cpp"
     },
-    "makefile.makefilePath": "client/"
+    "makefile.makefilePath": "client/",
+    "java.project.sourcePaths": [
+        "client"
+    ]
 }

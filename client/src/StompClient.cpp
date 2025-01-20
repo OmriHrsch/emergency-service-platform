@@ -53,8 +53,8 @@ int main(int argc, char *argv[]) {
 			else if (command == "join") {
 				string channelName = parsedCommand[1];
 				string frame = "SUBSCRIBE\n";
-				frame += "destination:/" + channelName + "\n";
-				frame += "id:" + std::to_string(idCounter) + "\n";
+				frame += "destination:" + channelName + "\n";
+				frame += "id:0\n";
 				frame += "receipt:" + std::to_string(reciptCounter) + "\n";
 				frame += "\n";
 				cout << frame;

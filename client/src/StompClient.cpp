@@ -146,11 +146,12 @@ int main(int argc, char *argv[]) {
 				}
 			}
 			else if (frame.getCommand() == "ERROR"){
-				connectionHandler.close();
+				connectionHandler.close(); //Is the server supposed to execute this?
 				connected = false, error = true;
 			}
 		}
 		connectionHandler.close(); //Closing the client's connection after user disconnects, after normal logout or error
+		connectionHandler->close(); //Being out of the loop means the connection has been closed, either intentionally or by an error, in both we shut down the CH
 		if (error){ //Is there a specific error shutdown logic?
 			
 		}

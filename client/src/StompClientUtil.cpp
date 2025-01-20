@@ -1,4 +1,5 @@
 #include "StompClientUtil.h"
+#include<algorithm>
 
 bool StompClientUtil::logIn(ConnectionHandler& connectionHandler, string host, string username, string password)
 {
@@ -120,4 +121,40 @@ void StompClientUtil::loginLogic(ConnectionHandler& connectionHandler, string &u
 		connectionHandler.setHostPort(host, atoi(port.c_str()));
 		loggedIn = StompClientUtil::logIn(connectionHandler, host, username, password);
 	}
+}
+
+void StompClientUtil::epoch_to_date(int epoch, string &dateString)
+{
+      // Convert epoch to time_t
+    std::time_t time = static_cast<std::time_t>(epoch);
+    
+    // Convert to tm structure for local time
+    std::tm* localTime = std::localtime(&time);
+    
+    // Format the time into a readable string
+    char buffer[100];
+    if (std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localTime)) {
+        dateString = std::string(buffer);
+    }
+}
+
+void StompClientUtil::sortByDateTime(vector<Event> &v)
+{
+    int n = v.size();
+    for (int i = 0; i < n - 1; i++)
+    {
+        for (int j = 0; j < n - i - 1; j++)
+        {
+            if (v[j].get_date_time() > v[j + 1].get_date_time()){
+                Event temp = v[j]; 
+                v[j] = v[j+1];
+                v[j+1] = temp;
+            }
+            else if (v[j].get_date_time() == v[j + 1].get_date_time() && v[j+1].get_name() > v[j].get_name()) {
+                Event temp = v[j]; 
+                v[j] = v[j+1];
+                v[j+1] = temp;
+            }
+        }
+    }
 }

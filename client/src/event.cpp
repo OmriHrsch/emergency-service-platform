@@ -8,6 +8,7 @@
 #include <vector>
 #include <sstream>
 #include <cstring>
+#include "event.h"
 
 
 
@@ -60,13 +61,37 @@ const std::map<std::string, std::string> &Event::get_general_information() const
 
 std::string Event::toString() const
 {
+    string dateString = "";
+    epoch_to_date(date_time, dateString);
+    std::ostringstream oss;
+
+    // Add city
+    oss << "city:" << city << "\n";
+
+    // Add date time
+    oss << "date time:" << dateString << "\n";
+
+    // Add event name
+    oss << "event name:" << name << "\n";
+
+    // Add description
+    if (static_cast<int>(description.size()) > 27) {
+        oss << "summary: " << description.substr(27) << "...\n";
+    }
+    else {
+        oss << "summary: " << description + "\n";
+    }
+    
+
+    return oss.str();
+}
+
+std::string Event::toFrameBody() const
+{
     std::ostringstream oss;
 
     // Add user
     oss << "user:" << eventOwnerUser << "\n";
-
-    // Add channel name
-    oss << "channel name:" << channel_name << "\n";
 
     // Add city
     oss << "city:" << city << "\n";
@@ -80,13 +105,33 @@ std::string Event::toString() const
     // Add general information
     oss << "general information:\n";
     for (const auto &pair : general_information) {
-        oss << " " << pair.first << ":" << pair.second << "\n";
+        // if (pair.first == "forces_arrival_at_scene") {
+        //     oss << " " << "forces arrival at scene: " << pair.second << "\n";
+        // }
+        // else {
+            oss << "\t" << pair.first << ":" << pair.second << "\n";
+        //}
     }
 
     // Add description
     oss << "description:\n" << description;
 
     return oss.str();
+}
+
+void Event::epoch_to_date(int epoch, std::string &dateString)
+{
+      // Convert epoch to time_t
+    std::time_t time = static_cast<std::time_t>(epoch);
+    
+    // Convert to tm structure for local time
+    std::tm* localTime = std::localtime(&time);
+    
+    // Format the time into a readable string
+    char buffer[100];
+    if (std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localTime)) {
+        dateString = std::string(buffer);
+    }
 }
 
 const std::string &Event::get_description() const

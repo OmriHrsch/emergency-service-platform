@@ -4,6 +4,7 @@
 #include <iostream>
 #include <map>
 #include <vector> 
+#include <ctime>
 
 class Event
 {
@@ -35,7 +36,8 @@ public:
     int get_date_time() const;
     const std::map<std::string, std::string> &get_general_information() const;
     std::string toString() const;
-
+    std::string toFrameBody() const;
+    static void epoch_to_date(int epoch, std::string& dateString);
 };
 
 // an object that holds the names of the teams and a vector of events, to be returned by the parseEventsFile function

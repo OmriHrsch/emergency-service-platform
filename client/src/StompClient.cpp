@@ -10,6 +10,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <functional>
+#include <ctime>
 
 using std::cin;
 using std::cout;
@@ -36,7 +37,7 @@ int main(int argc, char *argv[]) {
 
 	//initialize two threads for client operation
 	std::thread userThread ([&connectionHandler, &subscribedChannels, &reciptCallbacks, &eventMap, &username, &loggedIn]() mutable {
-		int reciptCounter = 1;
+		int reciptCounter = 75;
 		int idCounter = 1;
 		while (true) {
 			while (!loggedIn) {
@@ -56,6 +57,7 @@ int main(int argc, char *argv[]) {
 				frame += "id:" + std::to_string(idCounter) + "\n";
 				frame += "receipt:" + std::to_string(reciptCounter) + "\n";
 				frame += "\n";
+				cout << frame;
 				reciptCallbacks.insert({reciptCounter, [&subscribedChannels, channelName, idCounter]() mutable {
 					 subscribedChannels[channelName] = idCounter; 
 					 cout << "joined to " + channelName +"\n";
@@ -91,8 +93,10 @@ int main(int argc, char *argv[]) {
 					event.setEventOwnerUser(username);
 					eventMap[parsedReport.channel_name][username].push_back(event);
 					string frame = "SEND\n";
-					frame += event.toString();
+					frame += "destination:/" + event.get_channel_name() + "\n\n";
+					frame += event.toFrameBody();
 					frame += "\n";
+					cout << frame;
 					connectionHandler.sendFrame(frame);
 				}
 			}
@@ -100,9 +104,28 @@ int main(int argc, char *argv[]) {
 				string channelName = parsedCommand[1];
 				string user = parsedCommand[2];
 				string file = parsedCommand[3];
+				string summary = "Channel " + channelName + "\n";
+				summary += "Stats: \n";
 				if ((!eventMap.count(channelName)) && (!eventMap[channelName].count(user))) {
-					for (Event e: eventMap[channelName][user]) {
-						cout << e.toString();
+					vector<Event>& eventsList = eventMap[channelName][user];
+					summary += "Total: " + std::to_string(eventsList.size()) + "\n";
+					int active = 0;
+					int forcesArrive = 0;
+					for (Event e: eventsList) {
+						if (e.get_general_information().at("active") == "true") {
+							active++;
+						}
+						if (e.get_general_information().at("forces arrival at scene") == "true") {
+							forcesArrive++;
+						}
+					}
+					summary += "active: " + std::to_string(active) + "\n";
+					summary += "forces arrival at scene: " + std::to_string(forcesArrive) + "\n\n";
+					summary += "Event Report:\n\n";
+					StompClientUtil::sortByDateTime(eventsList);
+					for (int i = 0; i < static_cast<int>(eventsList.size()); i++) {
+						summary += "Report_" + std::to_string(i+1) + ":\n";
+						summary += eventsList[i].toString() + "\n";
 					}
 				}
 			}
@@ -142,6 +165,9 @@ int main(int argc, char *argv[]) {
 				break;
 			}
 			StompFrame frame(line);
+			string frameString;
+			frame.toString(frameString);
+			cout << frame.toString(frameString) + "\n";
 			if (frame.getCommand() == "RECEIPT"){
 				int receiptID = std::stoi(frame.getHeader().at("receipt-id"));
 				connected = reciptCallbacks[receiptID]();			
@@ -156,8 +182,11 @@ int main(int argc, char *argv[]) {
 				if(!eventMap[topic].count(user)) {
 					eventMap[topic].insert({user, vector<Event>()});
 				}
+				eventMap[topic][user].push_back(event);
 			}
 			else if (frame.getCommand() == "ERROR"){
+				cout << "recrived error\n";
+				cout << frame.getBody();
 				connectionHandler.close();
 				connected = false, error = true;
 			}

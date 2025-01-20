@@ -17,6 +17,7 @@ using std::cerr;
 using std::endl;
 using std::string;
 using std::vector;
+using std::mutex;
 
 
 int main(int argc, char *argv[]) {
@@ -26,6 +27,7 @@ int main(int argc, char *argv[]) {
 	std::unordered_map<string, std::unordered_map<string, vector<Event>>> eventMap;
 	ConnectionHandler connectionHandler("host", 1111);
 	StompClientUtil::loginLogic(connectionHandler, username); //this method takes care for logic operation 
+	bool loggedIn = true;
 
 	if (!connectionHandler.isSocketOpen()) {
 		cout << "Socket closed after\n";
@@ -33,11 +35,13 @@ int main(int argc, char *argv[]) {
 	}
 
 	//initialize two threads for client operation
-	std::thread userThread ([&connectionHandler, &subscribedChannels, &reciptCallbacks, &eventMap, username]() mutable {
+	std::thread userThread ([&connectionHandler, &subscribedChannels, &reciptCallbacks, &eventMap, &username, &loggedIn]() mutable {
 		int reciptCounter = 1;
 		int idCounter = 1;
-		
 		while (true) {
+			while (!loggedIn) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+			}
 			string line;
 			std::getline(cin, line, '\n');
 			vector<string> parsedCommand = StompClientUtil::parseCommand(line);
@@ -107,22 +111,30 @@ int main(int argc, char *argv[]) {
 				frame += "receipt:" + std::to_string(reciptCounter) + "\n";
 				frame += "\n";
 				connectionHandler.sendFrame(frame);
-				reciptCallbacks.insert({reciptCounter, [&connectionHandler]() mutable {
-					connectionHandler.close();
-					cout << "log out successfully";
+				loggedIn = false;
+				reciptCallbacks.insert({reciptCounter, [&subscribedChannels, &reciptCallbacks, &eventMap, &username, &loggedIn]() mutable {
+					subscribedChannels.clear();
+					reciptCallbacks.clear();
+					eventMap.clear();
 					return false; 
 				}});
 				reciptCounter++;
 			}
 			else {
-				cout << "Omer Atzili Ben Zona";
+				cout << "Omer Atzili Ben Zona\n";
 			}
 		}
 	});
 
-	std::thread socketThread ([&connectionHandler, &subscribedChannels,& reciptCallbacks, &eventMap]()mutable{
+	std::thread socketThread ([&connectionHandler, &subscribedChannels,& reciptCallbacks, &eventMap, &username, &loggedIn]()mutable{
 		bool connected = true, error = false; //Noting if we are connected or not, and reason of disconnection (error ot logout)
-		while (connected){ 
+		while (true){
+			if (!connected) {
+				connectionHandler.close();
+				cout << "logged out successfully\n";
+				StompClientUtil::loginLogic(connectionHandler, username);
+				loggedIn = true;
+			} 
 			std::string line;
 			if (!connectionHandler.readFrame(line)) {
 				std::cout << "Disconnected. Exiting...\n" << std::endl;

@@ -204,18 +204,13 @@ int main(int argc, char *argv[]) {
 				// cout << event.toFrameBody() + "\n";
 			}
 			else if (frame.getCommand() == "ERROR"){
-<<<<<<< HEAD
-				connectionHandler.close(); //Is the server supposed to execute this?
-=======
 				cout << "recrived error\n";
 				cout << frame.getBody();
 				connectionHandler.close();
->>>>>>> 87cbb81d9e75e2d80dd892a5fc18509b3872be4b
 				connected = false, error = true;
 			}
 		}
 		connectionHandler.close(); //Closing the client's connection after user disconnects, after normal logout or error
-		connectionHandler->close(); //Being out of the loop means the connection has been closed, either intentionally or by an error, in both we shut down the CH
 		if (error){ //Is there a specific error shutdown logic?
 			
 		}

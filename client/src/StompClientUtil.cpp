@@ -4,10 +4,8 @@
 bool StompClientUtil::logIn(ConnectionHandler& connectionHandler, string host, string username, string password)
 {
  	if (!connectionHandler.connect()) { 
-        cout << "connection handler failed to connect, please try again";
         return false;
     }
-    cout << "Connection handler connected \n";
     string frame = "CONNECT\n";
     frame += "accept-version:1.2\n";
     frame += "host:stomp.cs.bgu.ac.il\n";
@@ -15,29 +13,19 @@ bool StompClientUtil::logIn(ConnectionHandler& connectionHandler, string host, s
     frame += "passcode:" + password + "\n";
     frame += "\n"; // End headers with a blank line
     connectionHandler.sendFrame(frame);
-    // if (!connectionHandler.sendBytes(frame.c_str(), frame.size())) {
-    //     std::cerr << "Failed to send frame body." << std::endl;
-    // }
-
-    // if (!connectionHandler.sendBytes("\0", 1)) { // Send NULL byte explicitly
-    //     std::cerr << "Failed to send NULL byte." << std::endl;
-    // } 
     string response;
     if (!connectionHandler.readFrame(response)) {
         cout << "Could not connect to server \n";
         return false;
     }
     StompFrame stompFrame(response);
-    // if (stompFrame.getCommand() != "User is already logged in") {
-    //     cout << "User already logged in\n";
-    //     return false;
-    // }
-    // if (stompFrame.getCommand() == "Wrong password" != std::string::npos) {
-    //     cout << "Wrong password\n";
-    //     return false;
-    // }
+    if (stompFrame.getCommand() == "ERROR") {
+        string errorMessage = stompFrame.getHeader().at("message");
+        cout << "Error: " << errorMessage << "\n";
+        return false;
+    }
     if (stompFrame.getCommand() == "CONNECTED") {
-        cout << "Login Succesfull\n";
+        cout << "Login successful\n";
         return true;
     }
     cout << "unknown error\n";

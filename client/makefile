@@ -8,11 +8,10 @@ compile:
 	mv *.o bin/ 
 
 link:
-	g++ -g -Wall -Weffc++ -std=c++11 -o bin/StompEMIlient bin/*.o -pthread
+	g++ -g -Wall -Weffc++ -std=c++11 -o bin/StompEMIClient bin/*.o -pthread
 
 run:
-	bin/StompEMIlient
-	login 127.0.0.1:116 tom 123
+	bin/StompEMIClient
 
 EchoClient: bin/ConnectionHandler.o bin/echoClient.o
 	g++ -o bin/EchoClient bin/ConnectionHandler.o bin/echoClient.o $(LDFLAGS)

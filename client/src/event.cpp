@@ -49,6 +49,22 @@ const std::string &Event::get_name() const
     return this->name;
 }
 
+const void Event::get_description_summary(std::string& str) const
+{
+    if (static_cast<int>(description.size()) > 27) {
+        str = description.substr(0, 27) + "...";
+    } else {
+        str = description;
+    }
+}
+
+const void Event::get_date_time_string(std::string& str) const
+{
+    string dateString = "";
+    epoch_to_date(date_time, dateString);
+    str = dateString;
+}
+
 int Event::get_date_time() const
 {
     return this->date_time;

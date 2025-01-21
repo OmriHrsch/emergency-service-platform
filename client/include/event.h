@@ -33,6 +33,8 @@ public:
     const std::string &get_city() const;
     const std::string &get_description() const;
     const std::string &get_name() const;
+    const void get_description_summary(std::string& str) const;
+    const void get_date_time_string(std::string& str) const;
     int get_date_time() const;
     const std::map<std::string, std::string> &get_general_information() const;
     std::string toString() const;

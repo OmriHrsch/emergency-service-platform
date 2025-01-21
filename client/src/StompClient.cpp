@@ -11,7 +11,13 @@
 #include <unordered_map>
 #include <functional>
 #include <ctime>
+#include "../include/json.hpp"
+#include <iostream>
+#include <fstream>
 
+
+
+using json = nlohmann::json;
 using std::cin;
 using std::cout;
 using std::cerr;
@@ -29,11 +35,6 @@ int main(int argc, char *argv[]) {
 	ConnectionHandler connectionHandler("host", 1111);
 	StompClientUtil::loginLogic(connectionHandler, username); //this method takes care for logic operation 
 	bool loggedIn = true;
-
-	if (!connectionHandler.isSocketOpen()) {
-		cout << "Socket closed after\n";
-		return 0;
-	}
 
 	//initialize two threads for client operation
 	std::thread userThread ([&connectionHandler, &subscribedChannels, &reciptCallbacks, &eventMap, &username, &loggedIn]() mutable {
@@ -59,7 +60,7 @@ int main(int argc, char *argv[]) {
 				frame += "\n";
 				reciptCallbacks.insert({reciptCounter, [&subscribedChannels, channelName, idCounter]() mutable {
 					 subscribedChannels[channelName] = idCounter; 
-					 cout << "joined to " + channelName +"\n";
+					 cout << "joined channel " + channelName +"\n";
 					 return true; 
 				}});
 				reciptCounter++;
@@ -74,7 +75,7 @@ int main(int argc, char *argv[]) {
 				frame += "\n";
 				reciptCallbacks.insert({reciptCounter, [subscribedChannels, channelName, idCounter]() mutable { 
 					subscribedChannels.erase(channelName);
-					cout << "unsubscribed" + channelName + "successfully\n";
+					cout << "Exited channel " + channelName + "\n";
 					return true; 
 				}});
 				reciptCounter++;
@@ -82,30 +83,22 @@ int main(int argc, char *argv[]) {
 			}
 			else if (command == "report") {
 				names_and_events parsedReport = parseEventsFile(parsedCommand[1]);
-				// if (!eventMap.count(parsedReport.channel_name)) {
-				// 	eventMap.insert({parsedReport.channel_name, std::unordered_map<string, vector<Event>>()});
-				// }
-				// if(!eventMap[parsedReport.channel_name].count(username)) {
-				// 	eventMap[parsedReport.channel_name].insert({username, vector<Event>()});
-				// }
 				for (Event event: parsedReport.events) {
 					event.setEventOwnerUser(username);
 					string frame = "SEND\n";
 					frame += "destination:/" + event.get_channel_name() + "\n\n";
 					frame += event.toFrameBody();
 					connectionHandler.sendFrame(frame);
-					//cout << frame + "\n";
 				}
+				cout << "reported\n";
 			}
 			else if (command == "summary") {
 				string channelName = parsedCommand[1];
 				string user = parsedCommand[2];
-				string file = parsedCommand[3];
-				string summary = "Channel " + channelName + "\n";
-				summary += "Stats: \n";
+				string file_path = parsedCommand[3];
 				if ((eventMap.count(channelName)) && (eventMap[channelName].count(user))) {
-					//vector<Event>& eventsList = eventMap[channelName][user];
-					summary += "Total: " + std::to_string(eventMap[channelName][user].size()) + "\n";
+					json summary;
+					summary["Channel"] = channelName;
 					int active = 0;
 					int forcesArrive = 0;
 					for (Event e: eventMap[channelName][user]) {
@@ -116,16 +109,35 @@ int main(int argc, char *argv[]) {
 							forcesArrive++;
 						}
 					}
-					summary += "active: " + std::to_string(active) + "\n";
-					summary += "forces arrival at scene: " + std::to_string(forcesArrive) + "\n\n";
-					summary += "Event Report:\n\n";
+					summary["Stats"] = {
+						{ "Total", std::to_string(eventMap[channelName][user].size()) },
+						{ "Active", std::to_string(active) },
+						{ "forces arrival at scene ", std::to_string(forcesArrive) }
+					};
 					StompClientUtil::sortByDateTime(eventMap[channelName][user]);
 					for (int i = 0; i < static_cast<int>(eventMap[channelName][user].size()); i++) {
-						summary += "Report_" + std::to_string(i+1) + ":\n";
-						summary += eventMap[channelName][user][i].toString() + "\n";
+						string description = "";
+						eventMap[channelName][user][i].get_description_summary(description);
+						string date = "";
+						eventMap[channelName][user][i].get_date_time_string(date);
+						json report;
+						report["city"] = eventMap[channelName][user][i].get_city();
+						report["date time"] = date;
+						report["event name"] = eventMap[channelName][user][i].get_name();
+						report["summary"] = description;
+						summary["Event Reports"]["Report_" + std::to_string(i + 1)] = report;
+					}
+					std::ofstream file(file_path);
+					if (file.is_open()) {
+						file << summary.dump(4);
+						file.close();
+					} else {
+						std::cerr << "Error opening the file!" << std::endl;
 					}
 				}
-				cout << summary;
+				else {
+					cout << "No events found for topic " + channelName + ", user " + user + "\n";
+				}
 			}
 			else if (command == "logout") {
 				string frame = "DISCONNECT\n";
@@ -149,7 +161,7 @@ int main(int argc, char *argv[]) {
 
 	std::thread socketThread ([&connectionHandler, &subscribedChannels,& reciptCallbacks, &eventMap, &username, &loggedIn]()mutable{
 		bool connected = true, error = false; //Noting if we are connected or not, and reason of disconnection (error ot logout)
-		while (true){
+		while (!error){
 			if (!connected) {
 				connectionHandler.close();
 				cout << "logged out successfully\n";
@@ -201,6 +213,9 @@ int main(int argc, char *argv[]) {
 		connectionHandler.close(); //Closing the client's connection after user disconnects, after normal logout or error
 		if (error){ //Is there a specific error shutdown logic?
 			
+		}
+		else{
+			cout << "Logged out\n";
 		}
 	});
 	userThread.join();

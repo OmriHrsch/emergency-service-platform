@@ -76,7 +76,7 @@ std::string Event::toString() const
 
     // Add description
     if (static_cast<int>(description.size()) > 27) {
-        oss << "summary: " << description.substr(27) << "...\n";
+        oss << "summary: " << description.substr(0, 27) << "...\n";
     }
     else {
         oss << "summary: " << description + "\n";

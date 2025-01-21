@@ -140,15 +140,24 @@ bool ConnectionHandler::readFrame(std::string &line){
 	int hasBody = 0;
 	if(!getLine(holder)){return false;}
 	line = line + holder;
-	if (holder == "MESSAGE" || holder == "ERROR" || holder == "SEND") {
-		hasBody++;
-	}
-	while (hasBody >= 0) {
+	if (holder == "MESSAGE\n") {;
+		while (holder.find("description") != 0) {
+			holder.clear();
+			if(!getLine(holder)){return false;}
+			line = line + holder;
+		}
 		holder.clear();
 		if(!getLine(holder)){return false;}
 		line = line + holder;
-		if (holder == "\n" || holder == "\0" || holder == "") {
-			hasBody--;
+	}
+	else {
+		while (hasBody >= 0) {
+			holder.clear();
+			if(!getLine(holder)){return false;}
+			line = line + holder;
+			if (holder == "\n") {
+				hasBody--;
+			}
 		}
 	}
 	return true;

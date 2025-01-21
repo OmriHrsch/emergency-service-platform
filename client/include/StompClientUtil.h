@@ -5,6 +5,7 @@
 #include <boost/asio.hpp>
 #include "../include/ConnectionHandler.h"
 #include "../include/StompFrame.h"
+#include "../include/event.h"
 #include <vector>
 
 using std::cin;
@@ -21,4 +22,6 @@ class StompClientUtil {
         static vector<string> parseCommand(string command);
         static vector<string> parseAnswer(string answer);
         static void loginLogic(ConnectionHandler& connectionHandler, string& username);
+        static void epoch_to_date(int epoch, string& dateString);
+        static void sortByDateTime(vector<Event>& v);
 };

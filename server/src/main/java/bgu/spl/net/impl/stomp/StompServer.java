@@ -9,7 +9,7 @@ public class StompServer {
         {
             throw new IllegalArgumentException("Args should be: port, server-type");
         }
-        Server server = null;
+        Server<StompFrame> server = null;
         if(args[1].equals("tpc")) {
             server = Server.threadPerClient(Integer.parseInt(args[0]),
                     () -> new StompProtocol(),

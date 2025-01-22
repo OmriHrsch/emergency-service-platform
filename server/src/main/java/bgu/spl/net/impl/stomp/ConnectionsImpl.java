@@ -10,8 +10,16 @@ import java.io.IOException;
 
 public class ConnectionsImpl<T> implements Connections<T> {
 
-    final ConcurrentHashMap <Integer, ConnectionHandler<T>> connections =new ConcurrentHashMap<>(); //Saves all ACTIVE connections
-    final ConcurrentHashMap <String, List<Integer>> channelSubscriptions = new ConcurrentHashMap <>(); //Saves all the channels and the connections that are subscribed to them
+    final ConcurrentHashMap <Integer, ConnectionHandler<T>> connections; //Saves all ACTIVE connections
+    final ConcurrentHashMap <String, List<Integer>> channelSubscriptions; //Saves all the channels and the connections that are subscribed to them
+    final ConcurrentHashMap <String, Client> clients; //A client database 
+
+    public ConnectionsImpl() {
+        connections = new ConcurrentHashMap<>();
+        channelSubscriptions = new ConcurrentHashMap<>();
+        clients = new ConcurrentHashMap<>();
+    }
+
 
     @Override
     public boolean send(int connectionId, T msg){

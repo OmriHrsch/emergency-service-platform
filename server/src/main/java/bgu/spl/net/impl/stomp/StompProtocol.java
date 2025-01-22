@@ -1,7 +1,5 @@
 package bgu.spl.net.impl.stomp;
-
 import java.util.HashMap;
-
 import bgu.spl.net.api.StompMessagingProtocol;
 import bgu.spl.net.srv.ConnectionHandler;
 import bgu.spl.net.srv.Connections;
@@ -11,9 +9,9 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
     private boolean shouldTerminate = false;
     private int connectionID;
     private ConnectionsImpl<StompFrame> connections;
-    private ConnectionHandler<StompFrame> handler;
-    private HashMap<Integer, String> subscriptions;
-    private int messageIDCounter;
+    private HashMap<Integer, String> subscriptions; //Holds all the subscriptions of the client
+    private Client clientInfo;
+    int messageIDCounter;
 
 
 	@Override
@@ -45,21 +43,35 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
 
     //Helper proccesing methods
      private void processConnect(StompFrame message){
+        StompFrame responseFrame;
         String username = message.getHeaderValue("login");
         String password = message.getHeaderValue("passcode");
-        //Case: "The client is already logged in, log out before trying again"
-        if (connections.connections.containsKey(connectionID)){
-            StompFrame error = new StompFrame("ERROR\nmessage:The client is already logged in, log out before trying again\n\n\0");
-            connections.send(connectionID, error);
-            //Sending back an error frame isnt a must, but if we do so - the connection must be closed. do we want to send a frmae here? 
-            //If not, how do we transfer the error desctiption to the client?
+        //Checking if client already exists
+        if ((clientInfo = connections.clients.get(username)) == null) { 
+            // New user: create and add to clients
+            clientInfo = new Client(username, password);
+            connections.clients.put(username, clientInfo);
+        } 
+        //Case: "User already logged in"
+        else if (clientInfo.isLoggedIn()) {
+            responseFrame = new StompFrame("ERROR\nmessage:User already logged in.\n\n\0");
+            connections.send(password, responseFrame);
+            connections.disconnect(connectionID);
+            shouldTerminate = true;
+        }
+        //Case: "Wrong password"
+        else if (!clientInfo.getPassword().equals(password)) {
+            responseFrame = new StompFrame("ERROR\nmessage:Wrong password.\n\n\0");
+            connections.send(password, responseFrame);
+            connections.disconnect(connectionID);
+            shouldTerminate = true;
         }
         //Case: "Login Successful"
-        else if
-        //Case: "User already logged in"
-
-        //Case: "Wrong password"
-
+        else {
+            clientInfo.setLoggedIn(true);
+            responseFrame = new StompFrame("CONNECTED\nversion:1.2\n\n\0");
+            connections.send(password, responseFrame);
+        }
     }
 
     private void processSubscribe(StompFrame message){ //need to decide what to do if the client is already subscribed to the channel
@@ -70,13 +82,15 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
             String frameString = "ERROR\nreceipt-id:" + receipt + "\nmessage:Client is already used this subscription ID.\n\n\0";
             StompFrame error = new StompFrame(frameString);
             connections.send(connectionID, error);
-            disconnect();
+            connections.disconnect(connectionID);
+            shouldTerminate = true;
         }
         if (subscriptions.containsValue(channel)){
             String frameString = "ERROR\nreceipt-id:" + receipt + "\nmessage:Client is already subscribed to this channel.\n\n\0";
             StompFrame error = new StompFrame(frameString);
             connections.send(connectionID, error);
-            disconnect();
+            connections.disconnect(connectionID);
+            shouldTerminate = true;
         }
         else{
             subscriptions.put(id, channel);
@@ -92,7 +106,8 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
             String frameString = "ERROR\nreceipt-id:" + message.getHeaderValue("receipt") + "\nmessage:Client is not subscribed to this channel.\n\n\0";
             StompFrame error = new StompFrame(frameString);
             connections.send(connectionID, error);
-            disconnect();
+            connections.disconnect(connectionID);
+            shouldTerminate = true;
         }
         else {
             int id = Integer.parseInt(message.getHeaderValue("id"));
@@ -112,7 +127,8 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
             String frameString = "ERROR\nmessage:Client is not subscribed to this channel.\n\n\0";
             StompFrame error = new StompFrame(frameString);
             connections.send(connectionID, error);
-            disconnect();
+            connections.disconnect(connectionID);
+            shouldTerminate = true;
         }
         else{
             String frameString = "MESSAGE\ndestination:" + channel + "message-id:" + messageIDCounter + "\n\n" + body + "\0";
@@ -127,11 +143,7 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
         String frameString = "RECEIPT\nreceipt-id:" + receipt + "\n\n\0";
         StompFrame receiptFrame = new StompFrame(frameString);
         connections.send(connectionID, receiptFrame); 
-        disconnect();
-    }
-
-    private void disconnect(){
         connections.disconnect(connectionID);
-        shouldTerminate = true;
+            shouldTerminate = true;
     }
 }

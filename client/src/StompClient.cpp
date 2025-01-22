@@ -35,20 +35,27 @@ int main(int argc, char *argv[]) {
 	ConnectionHandler connectionHandler("host", 1111);
 	StompClientUtil::loginLogic(connectionHandler, username); //this method takes care for logic operation 
 	bool loggedIn = true;
+	bool error = false;
 
 	//initialize two threads for client operation
-	std::thread userThread ([&connectionHandler, &subscribedChannels, &reciptCallbacks, &eventMap, &username, &loggedIn]() mutable {
+	std::thread userThread ([&connectionHandler, &subscribedChannels, &reciptCallbacks, &eventMap, &username, &loggedIn, &error]() mutable {
 		int reciptCounter = 75;
 		int idCounter = 0;
 		while (true) {
 			while (!loggedIn) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+				if (error) {
+					break;
+				}
 			}
 			string line;
 			std::getline(cin, line, '\n');
 			vector<string> parsedCommand = StompClientUtil::parseCommand(line);
 			string command = parsedCommand[0];
 			if (command == "login") {
+				if (error) {
+					break;
+				}
 				cout << "The client is already logged in, log out before trying again\n";
 			}
 			else if (command == "join") {
@@ -65,6 +72,9 @@ int main(int argc, char *argv[]) {
 				}});
 				reciptCounter++;
 				idCounter++;
+				if (error) {
+					break;
+				}
 				connectionHandler.sendFrame(frame);
 			}
 			else if (command == "exit") {
@@ -79,6 +89,9 @@ int main(int argc, char *argv[]) {
 					return true; 
 				}});
 				reciptCounter++;
+				if (error) {
+					break;
+				}
 				connectionHandler.sendFrame(frame);
 			}
 			else if (command == "report") {
@@ -88,11 +101,17 @@ int main(int argc, char *argv[]) {
 					string frame = "SEND\n";
 					frame += "destination:/" + event.get_channel_name() + "\n\n";
 					frame += event.toFrameBody();
+					if (error) {
+						break;
+					}
 					connectionHandler.sendFrame(frame);
 				}
 				cout << "reported\n";
 			}
 			else if (command == "summary") {
+				if (error) {
+					break;
+				}
 				string channelName = parsedCommand[1];
 				string user = parsedCommand[2];
 				string file_path = parsedCommand[3];
@@ -143,6 +162,9 @@ int main(int argc, char *argv[]) {
 				string frame = "DISCONNECT\n";
 				frame += "receipt:" + std::to_string(reciptCounter) + "\n";
 				frame += "\n";
+				if (error) {
+					break;
+				}
 				connectionHandler.sendFrame(frame);
 				loggedIn = false;
 				reciptCallbacks.insert({reciptCounter, [&subscribedChannels, &reciptCallbacks, &eventMap, &username, &loggedIn]() mutable {
@@ -159,8 +181,8 @@ int main(int argc, char *argv[]) {
 		}
 	});
 
-	std::thread socketThread ([&connectionHandler, &subscribedChannels,& reciptCallbacks, &eventMap, &username, &loggedIn]()mutable{
-		bool connected = true, error = false; //Noting if we are connected or not, and reason of disconnection (error ot logout)
+	std::thread socketThread ([&connectionHandler, &subscribedChannels,& reciptCallbacks, &eventMap, &username, &loggedIn, &error]()mutable{
+		bool connected = true; //Noting if we are connected or not, and reason of disconnection (error ot logout)
 		while (!error){
 			if (!connected) {
 				connectionHandler.close();
@@ -210,11 +232,12 @@ int main(int argc, char *argv[]) {
 			else if (frame.getCommand() == "ERROR"){
 				cout << "recrived error\n";
 				cout << frame.getHeader().at("message") + "\n";
-				connectionHandler.close();
+				//connectionHandler.close();
 				connected = false, error = true;
+				return 0;
 			}
 		}
-		connectionHandler.close(); //Closing the client's connection after user disconnects, after normal logout or error
+		//connectionHandler.close(); //Closing the client's connection after user disconnects, after normal logout or error
 		if (error){ //Is there a specific error shutdown logic?
 			
 		}

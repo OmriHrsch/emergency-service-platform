@@ -1,7 +1,6 @@
 package bgu.spl.net.impl.stomp;
 import java.util.HashMap;
 import bgu.spl.net.api.StompMessagingProtocol;
-import bgu.spl.net.srv.ConnectionHandler;
 import bgu.spl.net.srv.Connections;
 
 public class StompProtocol implements StompMessagingProtocol<StompFrame>{
@@ -63,6 +62,7 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
         else if (clientInfo.isLoggedIn()) {
             responseFrame = new StompFrame("ERROR\nmessage:User already logged in.\n\n\0");
             connections.send(connectionID, responseFrame);
+            clientInfo.setLoggedIn(false);
             connections.disconnect(connectionID);
             shouldTerminate = true;
         }
@@ -70,6 +70,7 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
         else if (!clientInfo.getPassword().equals(password)) {
             responseFrame = new StompFrame("ERROR\nmessage:Wrong password.\n\n\0");
             connections.send(connectionID, responseFrame);
+            clientInfo.setLoggedIn(false);
             connections.disconnect(connectionID);
             shouldTerminate = true;
         }
@@ -90,6 +91,7 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
             String frameString = "ERROR\nreceipt-id:" + receipt + "\nmessage:Client is already used this subscription ID.\n\n\0";
             StompFrame error = new StompFrame(frameString);
             connections.send(connectionID, error);
+            clientInfo.setLoggedIn(false);
             connections.disconnect(connectionID);
             shouldTerminate = true;
         }
@@ -97,6 +99,7 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
             String frameString = "ERROR\nreceipt-id:" + receipt + "\nmessage:Client is already subscribed to this channel.\n\n\0";
             StompFrame error = new StompFrame(frameString);
             connections.send(connectionID, error);
+            clientInfo.setLoggedIn(false);
             connections.disconnect(connectionID);
             shouldTerminate = true;
         }
@@ -114,6 +117,7 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
             String frameString = "ERROR\nreceipt-id:" + message.getHeaderValue("receipt") + "\nmessage:Client is not subscribed to this channel.\n\n\0";
             StompFrame error = new StompFrame(frameString);
             connections.send(connectionID, error);
+            clientInfo.setLoggedIn(false);
             connections.disconnect(connectionID);
             shouldTerminate = true;
         }
@@ -135,6 +139,7 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
             String frameString = "ERROR\nmessage:Client is not subscribed to this channel.\n\n\0";
             StompFrame error = new StompFrame(frameString);
             connections.send(connectionID, error);
+            clientInfo.setLoggedIn(false);
             connections.disconnect(connectionID);
             shouldTerminate = true;
         }
@@ -151,7 +156,8 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
         String receipt = message.getHeaderValue("receipt");
         String frameString = "RECEIPT\nreceipt-id:" + receipt + "\n\n\0";
         StompFrame receiptFrame = new StompFrame(frameString);
-        connections.send(connectionID, receiptFrame); 
+        connections.send(connectionID, receiptFrame);
+        clientInfo.setLoggedIn(false);
         connections.disconnect(connectionID);
         shouldTerminate = true;
     }

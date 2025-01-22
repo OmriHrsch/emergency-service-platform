@@ -1,8 +1,10 @@
-package bgu.spl.net.srv;
+package bgu.spl.net.impl.stomp;
 
 import java.util.HashMap;
 
 import bgu.spl.net.api.StompMessagingProtocol;
+import bgu.spl.net.srv.ConnectionHandler;
+import bgu.spl.net.srv.Connections;
 
 public class StompProtocol implements StompMessagingProtocol<StompFrame>{
 
@@ -129,6 +131,7 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
     }
 
     private void disconnect(){
-        ///TODO: implement the practical part of the disconnect method (without sending frames to the client)
+        connections.disconnect(connectionID);
+        shouldTerminate = true;
     }
 }

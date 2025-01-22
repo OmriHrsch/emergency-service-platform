@@ -1,0 +1,16 @@
+{
+    "Channel": "police",
+    "Event Reports": {
+        "Report_1": {
+            "city": "Liberty City",
+            "date time": "2024-12-23 13:40:00",
+            "event name": "Grand Theft Auto",
+            "summary": "Pink Lampadati Felon with l..."
+        }
+    },
+    "Stats": {
+        "Active": "1",
+        "Total": "1",
+        "forces arrival at scene ": "0"
+    }
+}

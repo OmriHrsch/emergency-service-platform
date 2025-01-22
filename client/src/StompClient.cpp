@@ -186,6 +186,10 @@ int main(int argc, char *argv[]) {
 				connected = reciptCallbacks[receiptID]();			
 			}
 			else if(frame.getCommand() == "MESSAGE"){
+				cout << "Received message\n";
+				string frameString = "";
+				frame.toString(frameString);
+				cout << frameString + "\n";
 				string topic = frame.getHeader().at("destination");
 				if (topic.find("/") == 0) {
 					topic = topic.substr(1);
@@ -205,7 +209,7 @@ int main(int argc, char *argv[]) {
 			}
 			else if (frame.getCommand() == "ERROR"){
 				cout << "recrived error\n";
-				cout << frame.getBody();
+				cout << frame.getHeader().at("message") + "\n";
 				connectionHandler.close();
 				connected = false, error = true;
 			}

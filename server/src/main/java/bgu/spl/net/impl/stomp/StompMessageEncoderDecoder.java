@@ -10,7 +10,7 @@ public class StompMessageEncoderDecoder implements MessageEncoderDecoder<StompFr
     
     @Override
     public StompFrame decodeNextByte(byte nextByte){
-        if (nextByte == '\0') {
+        if (nextByte == 0) {
             String toFrame = new String(bytes,0,len);
             resetDecoder();
             return new StompFrame(toFrame);

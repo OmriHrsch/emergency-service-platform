@@ -22,6 +22,7 @@ bool StompClientUtil::logIn(ConnectionHandler& connectionHandler, string host, s
     if (stompFrame.getCommand() == "ERROR") {
         string errorMessage = stompFrame.getHeader().at("message");
         cout << "Error: " << errorMessage << "\n";
+        connectionHandler.close();
         return false;
     }
     if (stompFrame.getCommand() == "CONNECTED") {

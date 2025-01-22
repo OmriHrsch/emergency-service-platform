@@ -71,8 +71,6 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
             clientInfo.setLoggedIn(true);
             responseFrame = new StompFrame("CONNECTED\nversion:1.2\n\n\0");
             connections.send(password, responseFrame);
-            connections.disconnect(connectionID);
-            shouldTerminate = true;
         }
     }
 

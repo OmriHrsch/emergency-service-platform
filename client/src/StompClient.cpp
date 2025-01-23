@@ -106,14 +106,63 @@ int main(int argc, char *argv[]) {
 				}
 				cout << "reported\n";
 			}
+			// else if (command == "summary") {
+			// 	eventMapMutex.lock();
+			// 	string channelName = parsedCommand[1];
+			// 	string user = parsedCommand[2];
+			// 	string file_path = parsedCommand[3];
+			// 	if ((eventMap.count(channelName)) && (eventMap[channelName].count(user))) {
+			// 		json summary;
+			// 		summary["Channel"] = channelName;
+			// 		int active = 0;
+			// 		int forcesArrive = 0;
+			// 		for (Event e: eventMap[channelName][user]) {
+			// 			if (e.get_general_information().at("active") == "true") {
+			// 				active++;
+			// 			}
+			// 			if (e.get_general_information().at("forces_arrival_at_scene") == "true") {
+			// 				forcesArrive++;
+			// 			}
+			// 		}
+			// 		summary["Stats"] = {
+			// 			{ "Total", std::to_string(eventMap[channelName][user].size()) },
+			// 			{ "Active", std::to_string(active) },
+			// 			{ "forces arrival at scene ", std::to_string(forcesArrive) }
+			// 		};
+			// 		StompClientUtil::sortByDateTime(eventMap[channelName][user]);
+			// 		for (int i = 0; i < static_cast<int>(eventMap[channelName][user].size()); i++) {
+			// 			string description = "";
+			// 			eventMap[channelName][user][i].get_description_summary(description);
+			// 			string date = "";
+			// 			eventMap[channelName][user][i].get_date_time_string(date);
+			// 			json report;
+			// 			report["city"] = eventMap[channelName][user][i].get_city();
+			// 			report["date time"] = date;
+			// 			report["event name"] = eventMap[channelName][user][i].get_name();
+			// 			report["summary"] = description;
+			// 			summary["Event Reports"]["Report_" + std::to_string(i + 1)] = report;
+			// 		}
+			// 		eventMapMutex.unlock();
+			// 		std::ofstream file(file_path);
+			// 		if (file.is_open()) {
+			// 			file << summary.dump(4);
+			// 			file.close();
+			// 		} else {
+			// 			std::cerr << "Error opening the file!" << std::endl;
+			// 		}
+			// 	}
+			// 	else {
+			// 		cout << "No events found for topic " + channelName + ", user " + user + "\n";
+			// 	}
+			// }
 			else if (command == "summary") {
 				eventMapMutex.lock();
 				string channelName = parsedCommand[1];
 				string user = parsedCommand[2];
 				string file_path = parsedCommand[3];
 				if ((eventMap.count(channelName)) && (eventMap[channelName].count(user))) {
-					json summary;
-					summary["Channel"] = channelName;
+					std::stringstream summary;
+					summary << "Channel: " << channelName << "\n";
 					int active = 0;
 					int forcesArrive = 0;
 					for (Event e: eventMap[channelName][user]) {
@@ -123,12 +172,12 @@ int main(int argc, char *argv[]) {
 						if (e.get_general_information().at("forces_arrival_at_scene") == "true") {
 							forcesArrive++;
 						}
-					}
-					summary["Stats"] = {
-						{ "Total", std::to_string(eventMap[channelName][user].size()) },
-						{ "Active", std::to_string(active) },
-						{ "forces arrival at scene ", std::to_string(forcesArrive) }
 					};
+					summary << "Stats:\n";
+					summary << "Total: " << std::to_string(eventMap[channelName][user].size()) << "\n";
+					summary << "Active: " << std::to_string(active) << "\n";
+					summary << "forces arrival at scene: " << std::to_string(forcesArrive) << "\n\n";
+					summary << "Event Reports:\n\n";
 					StompClientUtil::sortByDateTime(eventMap[channelName][user]);
 					for (int i = 0; i < static_cast<int>(eventMap[channelName][user].size()); i++) {
 						string description = "";
@@ -140,12 +189,16 @@ int main(int argc, char *argv[]) {
 						report["date time"] = date;
 						report["event name"] = eventMap[channelName][user][i].get_name();
 						report["summary"] = description;
-						summary["Event Reports"]["Report_" + std::to_string(i + 1)] = report;
+						summary << "Report_" << std::to_string(i + 1) << "\n";
+						summary << "\tcity: " << eventMap[channelName][user][i].get_city() << "\n";
+						summary << "\tdate time: " << date << "\n";
+						summary << "\tevent name: " << eventMap[channelName][user][i].get_name() << "\n";
+						summary << "\tsummary: " << description << "\n\n";
 					}
 					eventMapMutex.unlock();
 					std::ofstream file(file_path);
 					if (file.is_open()) {
-						file << summary.dump(4);
+						file << summary.str(); 
 						file.close();
 					} else {
 						std::cerr << "Error opening the file!" << std::endl;

@@ -85,6 +85,9 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
 
     private void processSubscribe(StompFrame message){ //need to decide what to do if the client is already subscribed to the channel
         String channel = message.getHeaderValue("destination");
+        if (channel.startsWith("/")) {
+            channel = channel.substring(1);
+        }
         int id = Integer.parseInt(message.getHeaderValue("id"));
         int receipt = Integer.parseInt(message.getHeaderValue("receipt"));
         if (subscriptions.containsKey(id)){
@@ -133,7 +136,10 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
     }
 
     private void processSend(StompFrame message){
-        String channel = message.getHeaderValue("destination").substring(1);
+        String channel = message.getHeaderValue("destination");
+        if (channel.startsWith("/")) {
+            channel = channel.substring(1);
+        }
         String body = message.getBody();
         if (!subscriptions.containsValue(channel)){
             String frameString = "ERROR\nmessage:Client is not subscribed to this channel.\n\n\0";

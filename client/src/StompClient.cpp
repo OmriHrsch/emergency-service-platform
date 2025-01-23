@@ -35,9 +35,12 @@ int main(int argc, char *argv[]) {
 	ConnectionHandler connectionHandler("host", 1111);
 	StompClientUtil::loginLogic(connectionHandler, username); //this method takes care for logic operation 
 	bool loggedIn = true;
+	mutex subscribedChannelsMutex;
+	mutex reciptCallbacksMutex;
+	mutex eventMapMutex;
 
 	//initialize two threads for client operation
-	std::thread userThread ([&connectionHandler, &subscribedChannels, &reciptCallbacks, &eventMap, &username, &loggedIn]() mutable {
+	std::thread userThread ([&connectionHandler, &subscribedChannels, &reciptCallbacks, &eventMap, &username, &loggedIn, &subscribedChannelsMutex, &reciptCallbacksMutex, &eventMapMutex]() mutable {
 		int reciptCounter = 75;
 		int idCounter = 0;
 		while (true) {
@@ -45,7 +48,8 @@ int main(int argc, char *argv[]) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 			}
 			string line;
-			std::getline(cin, line, '\n');
+			// std::getline(cin, line, '\n');
+			getline(cin, line);
 			vector<string> parsedCommand = StompClientUtil::parseCommand(line);
 			string command = parsedCommand[0];
 			if (command == "login") {
@@ -58,11 +62,15 @@ int main(int argc, char *argv[]) {
 				frame += "id:" + std::to_string(idCounter) + "\n";
 				frame += "receipt:" + std::to_string(reciptCounter) + "\n";
 				frame += "\n";
-				reciptCallbacks.insert({reciptCounter, [&subscribedChannels, channelName, idCounter]() mutable {
-					 subscribedChannels[channelName] = idCounter; 
-					 cout << "joined channel " + channelName +"\n";
-					 return true; 
+				reciptCallbacksMutex.lock();
+				reciptCallbacks.insert({reciptCounter, [&subscribedChannels, channelName, idCounter, &subscribedChannelsMutex]() mutable {
+					subscribedChannelsMutex.lock();
+					subscribedChannels[channelName] = idCounter; 
+					subscribedChannelsMutex.unlock();
+					cout << "joined channel " + channelName +"\n";
+					return true; 
 				}});
+				reciptCallbacksMutex.unlock();
 				reciptCounter++;
 				idCounter++;
 				connectionHandler.sendFrame(frame);
@@ -70,14 +78,20 @@ int main(int argc, char *argv[]) {
 			else if (command == "exit") {
 				string channelName = parsedCommand[1];
 				string frame = "UNSUBSCRIBE\n";
+				subscribedChannelsMutex.lock();
 				frame += "id:" + std::to_string(subscribedChannels[channelName]) + "\n";
+				subscribedChannelsMutex.unlock();
 				frame += "receipt:" + std::to_string(reciptCounter) + "\n";
 				frame += "\n";
-				reciptCallbacks.insert({reciptCounter, [subscribedChannels, channelName, idCounter]() mutable { 
+				reciptCallbacksMutex.lock();
+				reciptCallbacks.insert({reciptCounter, [&subscribedChannels, channelName, idCounter, &subscribedChannelsMutex]() mutable { 
+					subscribedChannelsMutex.lock();
 					subscribedChannels.erase(channelName);
+					subscribedChannelsMutex.unlock();
 					cout << "Exited channel " + channelName + "\n";
 					return true; 
 				}});
+				reciptCallbacksMutex.unlock();
 				reciptCounter++;
 				connectionHandler.sendFrame(frame);
 			}
@@ -93,6 +107,7 @@ int main(int argc, char *argv[]) {
 				cout << "reported\n";
 			}
 			else if (command == "summary") {
+				eventMapMutex.lock();
 				string channelName = parsedCommand[1];
 				string user = parsedCommand[2];
 				string file_path = parsedCommand[3];
@@ -127,6 +142,7 @@ int main(int argc, char *argv[]) {
 						report["summary"] = description;
 						summary["Event Reports"]["Report_" + std::to_string(i + 1)] = report;
 					}
+					eventMapMutex.unlock();
 					std::ofstream file(file_path);
 					if (file.is_open()) {
 						file << summary.dump(4);
@@ -145,26 +161,34 @@ int main(int argc, char *argv[]) {
 				frame += "\n";
 				connectionHandler.sendFrame(frame);
 				loggedIn = false;
-				reciptCallbacks.insert({reciptCounter, [&subscribedChannels, &reciptCallbacks, &eventMap, &username, &loggedIn]() mutable {
-					subscribedChannels.clear();
-					reciptCallbacks.clear();
-					eventMap.clear();
+				reciptCallbacksMutex.lock();
+				reciptCallbacks.insert({reciptCounter, []() mutable {
 					return false; 
 				}});
+				reciptCallbacksMutex.unlock();
 				reciptCounter++;
 			}
 			else {
-				cout << "Omer Atzili Ben Zona\n";
+				cout << "unknown command\n";
 			}
 		}
 	});
 
-	std::thread socketThread ([&connectionHandler, &subscribedChannels,& reciptCallbacks, &eventMap, &username, &loggedIn]()mutable{
+	std::thread socketThread ([&connectionHandler, &subscribedChannels,& reciptCallbacks, &eventMap, &username, &loggedIn, &subscribedChannelsMutex, &reciptCallbacksMutex, &eventMapMutex]()mutable{
 		bool connected = true; //Noting if we are connected or not, and reason of disconnection (error ot logout)
 		while (true){
 			if (!connected) {
 				connectionHandler.close();
 				cout << "logged out successfully\n";
+				subscribedChannelsMutex.lock();
+				subscribedChannels.clear();
+				subscribedChannelsMutex.unlock();
+				reciptCallbacksMutex.lock();
+				reciptCallbacks.clear();
+				reciptCallbacksMutex.unlock();
+				eventMapMutex.lock();
+				eventMap.clear();
+				eventMapMutex.unlock();
 				StompClientUtil::loginLogic(connectionHandler, username);
 				loggedIn = true;
 			} 
@@ -182,19 +206,21 @@ int main(int argc, char *argv[]) {
 			// cout << "end of frame\n";
 			if (frame.getCommand() == "RECEIPT"){
 				int receiptID = std::stoi(frame.getHeader().at("receipt-id"));
-				connected = reciptCallbacks[receiptID]();			
+				reciptCallbacksMutex.lock();
+				connected = reciptCallbacks[receiptID]();
+				reciptCallbacksMutex.unlock();			
 			}
 			else if(frame.getCommand() == "MESSAGE"){
-				cout << "Received message\n";
 				string frameString = "";
 				frame.toString(frameString);
-				cout << frameString + "\n";
+				//cout << frameString + "\n";
 				string topic = frame.getHeader().at("destination");
 				if (topic.find("/") == 0) {
 					topic = topic.substr(1);
 				}
 				Event event(frame.getBody());
 				string user = event.getEventOwnerUser();
+				eventMapMutex.lock();
 				if (!eventMap.count(topic)) {
 					eventMap.insert({topic, std::unordered_map<string, vector<Event>>()});
 				}
@@ -202,12 +228,13 @@ int main(int argc, char *argv[]) {
 					eventMap[topic].insert({user, vector<Event>()});
 				}
 				eventMap[topic][user].push_back(event);
+				eventMapMutex.unlock();
 				// cout << "topic: /" + topic + "/\n";
 				// cout << "user: /" + user + "/\n";
 				// cout << event.toFrameBody() + "\n";
 			}
 			else if (frame.getCommand() == "ERROR"){
-				cout << "recrived error\n";
+				cout << "ERROR: ";
 				cout << frame.getHeader().at("message") + "\n";
 				connectionHandler.close();
 				std::exit(0);

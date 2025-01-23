@@ -95,11 +95,12 @@ void StompClientUtil::loginLogic(ConnectionHandler& connectionHandler, string &u
     bool loggedIn = false;
     while (!loggedIn) { //while the client is not logged in, no other commands be accepted
 		string line;
-		std::getline(cin, line, '\n');
+		// std::getline(cin, line, '\n');
+        getline(cin, line);
 		vector<string> parsedCommand = StompClientUtil::parseCommand(line);
 		string command = parsedCommand[0];
 		if (command != "login") {
-			cout << "you should login first";
+			cout << "you should login first\n";
 			continue;
 		}
 		int index = parsedCommand[1].find(':');

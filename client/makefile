@@ -1,7 +1,7 @@
 CFLAGS:=-c -Wall -Weffc++ -g -std=c++11 -Iinclude
 LDFLAGS:=-lboost_system -lpthread
 # TODO change the makefile for StompEMIlient
-all: clean compile link run
+all: clean compile link
 
 compile:
 	g++ -g -Wall -Weffc++ -std=c++11 -c -Iinclude src/*.cpp -pthread

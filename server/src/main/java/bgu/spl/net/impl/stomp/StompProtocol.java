@@ -14,7 +14,7 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
 
 
 	@Override
-    public void start(int connectionId, Connections<StompFrame> connections) { //Must finish before using process so we could rub login logic as intended
+    public void start(int connectionId, Connections<StompFrame> connections) { //Initializes the protocol with the connection ID and the connections
         this.connectionID = connectionId;
         this.connections = (ConnectionsImpl<StompFrame>) connections;
         this.subscriptions = new HashMap<>();
@@ -22,9 +22,7 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
     }
     
     @Override
-    public void process(StompFrame message) {
-        //System.out.println("Processing message: " + message.toString());
-        //System.out.println("Connection ID: " + message.getCommand());
+    public void process(StompFrame message) { //Processes a message
         String command = message.getCommand();
         if (command.equals("CONNECT")) {
             processConnect(message);                                                
@@ -44,8 +42,8 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
     }
 
     //Helper proccesing methods
-     private void processConnect(StompFrame message){
-        //System.out.println("Processing connect");
+
+     private void processConnect(StompFrame message){ //processes a CONNECT message
         StompFrame responseFrame;
         String username = message.getHeaderValue("login");
         String password = message.getHeaderValue("passcode");
@@ -56,7 +54,6 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
             connections.clients.put(username, clientInfo);
             clientInfo.setLoggedIn(true);
             responseFrame = new StompFrame("CONNECTED\nversion:1.2\n\n\0");
-            //System.out.println("User " + username + " connected.");
             connections.send(connectionID, responseFrame);
         } 
         //Case: "User already logged in"
@@ -79,12 +76,11 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
         else {
             clientInfo.setLoggedIn(true);
             responseFrame = new StompFrame("CONNECTED\nversion:1.2\n\n\0");
-            //System.out.println("User " + username + " connected.");
             connections.send(connectionID, responseFrame);
         }
     }
 
-    private void processSubscribe(StompFrame message){ //need to decide what to do if the client is already subscribed to the channel
+    private void processSubscribe(StompFrame message){ //processes a SUBSCRIBE message
         String channel = message.getHeaderValue("destination");
         if (channel.startsWith("/")) {
             channel = channel.substring(1);
@@ -116,7 +112,7 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
         }
     }
 
-    private void processUnsubscribe(StompFrame message){
+    private void processUnsubscribe(StompFrame message){ //processes an UNSUBSCRIBE message
         if (!subscriptions.containsKey(Integer.parseInt(message.getHeaderValue("id")))){
             String frameString = "ERROR\nreceipt-id:" + message.getHeaderValue("receipt") + "\nmessage:Client is not subscribed to this channel.\n\n\0";
             StompFrame error = new StompFrame(frameString);
@@ -136,7 +132,7 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
         }
     }
 
-    private void processSend(StompFrame message){
+    private void processSend(StompFrame message){ //processes a SEND message
         String channel = message.getHeaderValue("destination");
         if (channel.startsWith("/")) {
             channel = channel.substring(1);
@@ -159,7 +155,7 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
         }
     }
 
-    private void processDisconnect(StompFrame message){
+    private void processDisconnect(StompFrame message){ //processes a DISCONNECT message
         String receipt = message.getHeaderValue("receipt");
         String frameString = "RECEIPT\nreceipt-id:" + receipt + "\n\n\0";
         StompFrame receiptFrame = new StompFrame(frameString);

@@ -75,7 +75,7 @@ const std::map<std::string, std::string> &Event::get_general_information() const
     return this->general_information;
 }
 
-std::string Event::toString() const
+std::string Event::toString() const // toString method for the summary command
 {
     string dateString = "";
     epoch_to_date(date_time, dateString);
@@ -102,7 +102,7 @@ std::string Event::toString() const
     return oss.str();
 }
 
-std::string Event::toFrameBody() const
+std::string Event::toFrameBody() const //toString methdo for the report command
 {
     std::ostringstream oss;
 
@@ -135,7 +135,7 @@ std::string Event::toFrameBody() const
     return oss.str();
 }
 
-void Event::epoch_to_date(int epoch, std::string &dateString)
+void Event::epoch_to_date(int epoch, std::string &dateString) //coverts the date input to date formatted string
 {
       // Convert epoch to time_t
     std::time_t time = static_cast<std::time_t>(epoch);
@@ -155,7 +155,7 @@ const std::string &Event::get_description() const
     return this->description;
 }
 
-Event::Event(const std::string &frame_body): channel_name(""), city(""), 
+Event::Event(const std::string &frame_body): channel_name(""), city(""), //constructs an event object from a frame body
                                              name(""), date_time(0), description(""), general_information(),
                                              eventOwnerUser("")
 {

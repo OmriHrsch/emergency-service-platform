@@ -9,7 +9,7 @@ public class StompMessageEncoderDecoder implements MessageEncoderDecoder<StompFr
     private int len = 0;
     
     @Override
-    public StompFrame decodeNextByte(byte nextByte){
+    public StompFrame decodeNextByte(byte nextByte){ //decoding a single byte, returns a frame if the byte completes a frame, otherwise returns null
         if (nextByte == 0) {
             String toFrame = new String(bytes,0,len);
             resetDecoder();
@@ -19,7 +19,7 @@ public class StompMessageEncoderDecoder implements MessageEncoderDecoder<StompFr
         return null; //not a line yet
     }
 
-    private void pushByte(byte nextByte) {
+    private void pushByte(byte nextByte) { //pushes a byte to the bytes array
         if (len >= bytes.length) {
             bytes = Arrays.copyOf(bytes, len * 2);
         }
@@ -28,7 +28,7 @@ public class StompMessageEncoderDecoder implements MessageEncoderDecoder<StompFr
     }
 
     @Override
-    public byte[] encode(StompFrame frame){
+    public byte[] encode(StompFrame frame){ //encodes a frame to a byte array
         return frame.toString().getBytes(StandardCharsets.UTF_8);
     }    
 

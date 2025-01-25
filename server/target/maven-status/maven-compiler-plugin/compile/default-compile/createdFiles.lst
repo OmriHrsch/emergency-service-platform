@@ -15,5 +15,4 @@ bgu/spl/net/impl/stomp/StompServer.class
 bgu/spl/net/srv/Server.class
 bgu/spl/net/impl/stomp/StompFrame.class
 bgu/spl/net/srv/ActorThreadPool.class
-bgu/spl/net/impl/stomp/StompServerTry.class
 bgu/spl/net/srv/Reactor.class

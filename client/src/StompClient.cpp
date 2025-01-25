@@ -28,12 +28,13 @@ using std::mutex;
 
 
 int main(int argc, char *argv[]) {
+
+	//declaring the variables
 	string username;
 	std::unordered_map<string, int> subscribedChannels;
 	std::unordered_map<int, std::function<bool()>> reciptCallbacks;
 	std::unordered_map<string, std::unordered_map<string, vector<Event>>> eventMap;
 	ConnectionHandler connectionHandler("host", 1111);
-	//StompClientUtil::loginLogic(connectionHandler, username); //this method takes care for logic operation 
 	bool loggedIn = false;
 	mutex subscribedChannelsMutex;
 	mutex reciptCallbacksMutex;
@@ -41,6 +42,7 @@ int main(int argc, char *argv[]) {
 	int reciptCounter = 0;
 	int idCounter = 0;
 	
+	//initializing the socket thread
 	std::thread socketThread ([&connectionHandler, &subscribedChannels,& reciptCallbacks, &eventMap, &loggedIn, &subscribedChannelsMutex, &reciptCallbacksMutex, &eventMapMutex]()mutable{
 		while (true){
 			while (!loggedIn) {
@@ -89,13 +91,15 @@ int main(int argc, char *argv[]) {
 		cout << "socket thread ended\n";
 	});
 
+    //the keyboard thread logic
 	while (true) {
 		string line;
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		getline(cin, line);
 		vector<string> parsedCommand = StompClientUtil::parseCommand(line);
 		string command = parsedCommand[0];
-		if (!loggedIn) {
+
+		//login logic
+		if (!loggedIn) { 
 			if (command == "login") {
 				int index = parsedCommand[1].find(':');
 				string host = parsedCommand[1].substr(0, index);
@@ -115,10 +119,12 @@ int main(int argc, char *argv[]) {
 			}
 			continue;
 		}
+
+		//commands logic (after client is logged in)
 		if (command == "login") {
 			cout << "The client is already logged in, log out before trying again\n";
 		}
-		else if (command == "join") {
+		else if (command == "join") { //handling the join command
 			string channelName = parsedCommand[1];
 			string frame = "SUBSCRIBE\n";
 			frame += "destination:" + channelName + "\n";
@@ -138,7 +144,7 @@ int main(int argc, char *argv[]) {
 			idCounter++;
 			connectionHandler.sendFrame(frame);
 		}
-		else if (command == "exit") {
+		else if (command == "exit") { //handling the exit command
 			string channelName = parsedCommand[1];
 			string frame = "UNSUBSCRIBE\n";
 			subscribedChannelsMutex.lock();
@@ -158,7 +164,7 @@ int main(int argc, char *argv[]) {
 			reciptCounter++;
 			connectionHandler.sendFrame(frame);
 		}
-		else if (command == "report") {
+		else if (command == "report") { //handling the report command
 			bool valid = true;
 			names_and_events parsedReport = parseEventsFile(parsedCommand[1]);
 			for (Event event: parsedReport.events) {
@@ -176,7 +182,7 @@ int main(int argc, char *argv[]) {
 				cout << "reported\n";
 			}
 		}
-		else if (command == "summary") {
+		else if (command == "summary") { //handling the summary command
 			eventMapMutex.lock();
 			string channelName = parsedCommand[1];
 			string user = parsedCommand[2];
@@ -188,7 +194,7 @@ int main(int argc, char *argv[]) {
 				int forcesArrive = 0;
 				for (Event e: eventMap[channelName][user]) {
 					if (e.get_general_information().at("active") == "true") {
-						active++;
+						active++;		
 					}
 					if (e.get_general_information().at("forces_arrival_at_scene") == "true") {
 						forcesArrive++;
@@ -229,7 +235,7 @@ int main(int argc, char *argv[]) {
 				cout << "No events found for topic " + channelName + ", user " + user + "\n";
 			}
 		}
-		else if (command == "logout") {
+		else if (command == "logout") { //handling the logout command
 			string frame = "DISCONNECT\n";
 			frame += "receipt:" + std::to_string(reciptCounter) + "\n";
 			frame += "\n";

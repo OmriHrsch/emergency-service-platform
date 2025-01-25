@@ -1,6 +1,11 @@
 package bgu.spl.net.impl.stomp;
 
 public class Client {
+
+    //this class represents a client that is registered to the server
+    //each client has a username and a password
+    //the server will use this class to check if the client is registered and if the password is correct
+
     private String username;
     private String password;
     private boolean isLoggedIn;

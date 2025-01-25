@@ -6,7 +6,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import bgu.spl.net.srv.ConnectionHandler;
 import bgu.spl.net.srv.Connections;
 
-import java.io.IOException;
 
 public class ConnectionsImpl<T> implements Connections<T> {
 
@@ -14,7 +13,7 @@ public class ConnectionsImpl<T> implements Connections<T> {
     final ConcurrentHashMap <String, List<Integer>> channelSubscriptions; //Saves all the channels and the connections that are subscribed to them
     final ConcurrentHashMap <String, Client> clients; //A client database 
 
-    public ConnectionsImpl() {
+    public ConnectionsImpl() { //Constructor
         connections = new ConcurrentHashMap<>();
         channelSubscriptions = new ConcurrentHashMap<>();
         clients = new ConcurrentHashMap<>();
@@ -22,7 +21,7 @@ public class ConnectionsImpl<T> implements Connections<T> {
 
 
     @Override
-    public boolean send(int connectionId, T msg){
+    public boolean send(int connectionId, T msg){ //Sending a message to a specific connection
         ConnectionHandler<T> handler = connections.get(connectionId);
         if (handler == null){   
             return false;
@@ -32,7 +31,7 @@ public class ConnectionsImpl<T> implements Connections<T> {
     }
 
     @Override
-    public void send(String channel, T msg){
+    public void send(String channel, T msg){ //Sending a message to all the connections that are subscribed to a specific channel
         List<Integer> subscribedToChannel = channelSubscriptions.get(channel);
         if (subscribedToChannel!=null){
             for (int connection : subscribedToChannel){
@@ -47,11 +46,6 @@ public class ConnectionsImpl<T> implements Connections<T> {
         ConnectionHandler<T> toDelete = connections.remove(connectionId); //Removing the connection from the connections map
         if (toDelete != null){
             channelSubscriptions.values().forEach(subscribers -> subscribers.remove((Integer) connectionId)); //Removing the connection from all the channels it is subscribed to
-            // try {
-            //     toDelete.close(); //Closing the connection of the removed client
-            // } catch (IOException e) {
-            //     e.printStackTrace();
-            // }
         }
         else {
             System.out.println("Connection not found\n");

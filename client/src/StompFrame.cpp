@@ -6,7 +6,7 @@
 
 using namespace std;
 
-vector<string> StompFrame::str_split(string &word, char delimiter)
+vector<string> StompFrame::str_split(string &word, char delimiter) //splitting the string by the delimiter
 {
     vector<string> toReturn;
     if (word.find(delimiter) != string::npos) {
@@ -17,7 +17,7 @@ vector<string> StompFrame::str_split(string &word, char delimiter)
     return toReturn;
 }
 
-const string &StompFrame::toString(string& frameString)
+const string &StompFrame::toString(string& frameString) //converting the frame to a string
 {
     frameString = command + "\n";
     for (const auto &pair : header) {
@@ -28,7 +28,7 @@ const string &StompFrame::toString(string& frameString)
     return frameString;
 }
 
-StompFrame::StompFrame(string &frameString)
+StompFrame::StompFrame(string &frameString) //parsing the frame
     : command(""), header(), body("") {
     stringstream ss(frameString);
     string line;

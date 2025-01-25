@@ -2,7 +2,7 @@
 #include<algorithm>
 
 bool StompClientUtil::logIn(ConnectionHandler& connectionHandler, string host, string username, string password)
-{
+{ //The function that handles the login command
  	if (!connectionHandler.connect()) { 
         return false;
     }
@@ -11,7 +11,7 @@ bool StompClientUtil::logIn(ConnectionHandler& connectionHandler, string host, s
     frame += "host:stomp.cs.bgu.ac.il\n";
     frame += "login:" + username + "\n";
     frame += "passcode:" + password + "\n";
-    frame += "\n"; // End headers with a blank line
+    frame += "\n"; 
     connectionHandler.sendFrame(frame);
     string response;
     if (!connectionHandler.readFrame(response)) {
@@ -33,7 +33,7 @@ bool StompClientUtil::logIn(ConnectionHandler& connectionHandler, string host, s
     return false;
 }
 
-vector<string> StompClientUtil::parseCommand(string command)
+vector<string> StompClientUtil::parseCommand(string command) //Parsing the command to get the command and its arguments
 {
     vector<string> parseCommand = {};
     int index = 0;
@@ -113,7 +113,7 @@ void StompClientUtil::loginLogic(ConnectionHandler& connectionHandler, string &u
 	}
 }
 
-void StompClientUtil::epoch_to_date(int epoch, string &dateString)
+void StompClientUtil::epoch_to_date(int epoch, string &dateString) //Converting the epoch time to a readable date
 {
       // Convert epoch to time_t
     std::time_t time = static_cast<std::time_t>(epoch);
@@ -128,7 +128,7 @@ void StompClientUtil::epoch_to_date(int epoch, string &dateString)
     }
 }
 
-void StompClientUtil::sortByDateTime(vector<Event> &v)
+void StompClientUtil::sortByDateTime(vector<Event> &v) //Sorting the events by date and time
 {
     int n = v.size();
     for (int i = 0; i < n - 1; i++)

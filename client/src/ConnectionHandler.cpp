@@ -14,7 +14,8 @@ ConnectionHandler::ConnectionHandler(string host, short port) : host_(host), por
                                                                 socket_(io_service_) {}
 
 ConnectionHandler::~ConnectionHandler() {
-	close();
+	if (socket_.is_open())
+		close();
 }
 
 bool ConnectionHandler::connect() {
@@ -55,6 +56,7 @@ bool ConnectionHandler::getBytes(char bytes[], unsigned int bytesToRead) {
 			throw boost::system::system_error(error);
 	} catch (std::exception &e) {
 		std::cerr << "recv failed (Error: " << e.what() << ')' << std::endl;
+		cout << "getBytes failed" << endl;
 		return false;
 	}
 	return true;
@@ -92,6 +94,7 @@ bool ConnectionHandler::getFrameAscii(std::string &frame, char delimiter) {
 	try {
 		do {
 			if (!getBytes(&ch, 1)) {
+				cout << frame << endl;
 				return false;
 			}
 			if (ch != '\0')
@@ -113,7 +116,8 @@ bool ConnectionHandler::sendFrameAscii(const std::string &frame, char delimiter)
 // Close down the connection properly.
 void ConnectionHandler::close() {
 	try {
-		socket_.close();
+		if (socket_.is_open())
+			socket_.close();
 	} catch (...) {
 		std::cout << "closing failed: connection already closed" << std::endl;
 	}

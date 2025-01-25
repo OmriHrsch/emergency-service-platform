@@ -20,22 +20,23 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
         this.subscriptions = new HashMap<>();
         this.messageIDCounter = 0;
     }
-
+    
     @Override
     public void process(StompFrame message) {
-        System.out.println("Processing message: " + message.toString());
-        System.out.println("Connection ID: " + message.getCommand());
+        //System.out.println("Processing message: " + message.toString());
+        //System.out.println("Connection ID: " + message.getCommand());
         String command = message.getCommand();
-        if (command.equals("CONNECT"))
-            processConnect(message);
-        else if (command.equals("SUBSCRIBE"))
+        if (command.equals("CONNECT")) {
+            processConnect(message);                                                
+        } else if (command.equals("SUBSCRIBE")) {
             processSubscribe(message);
-        else if (command.equals("UNSUBSCRIBE"))
+        } else if (command.equals("UNSUBSCRIBE")) {
             processUnsubscribe(message);
-        else if (command.equals("SEND"))
+        } else if (command.equals("SEND")) {
             processSend(message);
-        else if (command.equals("DISCONNECT"))
+        } else if (command.equals("DISCONNECT")) {
             processDisconnect(message);
+        }
     }
     
     public boolean shouldTerminate(){
@@ -44,7 +45,7 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
 
     //Helper proccesing methods
      private void processConnect(StompFrame message){
-        System.out.println("Processing connect");
+        //System.out.println("Processing connect");
         StompFrame responseFrame;
         String username = message.getHeaderValue("login");
         String password = message.getHeaderValue("passcode");
@@ -55,7 +56,7 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
             connections.clients.put(username, clientInfo);
             clientInfo.setLoggedIn(true);
             responseFrame = new StompFrame("CONNECTED\nversion:1.2\n\n\0");
-            System.out.println("User " + username + " connected.");
+            //System.out.println("User " + username + " connected.");
             connections.send(connectionID, responseFrame);
         } 
         //Case: "User already logged in"
@@ -78,7 +79,7 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
         else {
             clientInfo.setLoggedIn(true);
             responseFrame = new StompFrame("CONNECTED\nversion:1.2\n\n\0");
-            System.out.println("User " + username + " connected.");
+            //System.out.println("User " + username + " connected.");
             connections.send(connectionID, responseFrame);
         }
     }
@@ -151,7 +152,7 @@ public class StompProtocol implements StompMessagingProtocol<StompFrame>{
         }
         else{
             String frameString = "MESSAGE\ndestination:" + channel + "\nmessage-id:" + messageIDCounter + "\n\n" + body + "\n\0";
-            System.out.println("Sending message: " + frameString);
+            //System.out.println("Sending message: " + frameString);
             messageIDCounter++;
             StompFrame frame = new StompFrame(frameString);
             connections.send(channel, frame);

@@ -52,16 +52,6 @@
             }
         },
         {
-            "event_name": "Assault",
-            "city": "Pallet Town",
-            "date_time": 1735162200,
-            "description": "Male suspect assaulted another individual during an altercation at Liberty Mall. Victim suffered minor injuries.",
-            "general_information": {
-                "active": true,
-                "forces_arrival_at_scene": false
-            }
-        },
-        {
             "event_name": "Drug Possession Arrest",
             "city": "Gotham City",
             "date_time": 1735194000,

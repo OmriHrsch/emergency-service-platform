@@ -47,11 +47,14 @@ public class ConnectionsImpl<T> implements Connections<T> {
         ConnectionHandler<T> toDelete = connections.remove(connectionId); //Removing the connection from the connections map
         if (toDelete != null){
             channelSubscriptions.values().forEach(subscribers -> subscribers.remove((Integer) connectionId)); //Removing the connection from all the channels it is subscribed to
-            try {
-                toDelete.close(); //Closing the connection of the removed client
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            // try {
+            //     toDelete.close(); //Closing the connection of the removed client
+            // } catch (IOException e) {
+            //     e.printStackTrace();
+            // }
+        }
+        else {
+            System.out.println("Connection not found\n");
         }
     }
 

@@ -88,7 +88,7 @@ public class Reactor<T> implements Server<T> {
 
     /*package*/ void updateInterestedOps(SocketChannel chan, int ops) {
         final SelectionKey key = chan.keyFor(selector);
-        if (Thread.currentThread() == selectorThread) {
+        if (Thread.currentThread() == selectorThread && key.isValid()) {
             key.interestOps(ops);
         } else {
             selectorTasks.add(() -> {
@@ -118,7 +118,7 @@ public class Reactor<T> implements Server<T> {
         @SuppressWarnings("unchecked")
         NonBlockingConnectionHandler<T> handler = (NonBlockingConnectionHandler<T>) key.attachment();
 
-        if (key.isReadable()) {
+        if (key.isReadable() && !handler.isClosed()) {
             Runnable task = handler.continueRead();
             if (task != null) {
                 pool.submit(handler, task);

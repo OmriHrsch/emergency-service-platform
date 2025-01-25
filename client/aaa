@@ -1,7 +1,7 @@
 Channel: police
 Stats:
-Total: 7
-Active: 5
+Total: 6
+Active: 4
 forces arrival at scene: 4
 
 Event Reports:
@@ -31,18 +31,12 @@ Report_4
 	summary: Two masked suspects armed w...
 
 Report_5
-	city: Pallet Town
-	date time: 2024-12-25 21:30:00
-	event name: Assault
-	summary: Male suspect assaulted anot...
-
-Report_6
 	city: Gotham City
 	date time: 2024-12-26 06:20:00
 	event name: Drug Possession Arrest
 	summary: Police apprehended a suspec...
 
-Report_7
+Report_6
 	city: Los Alamos
 	date time: 2024-12-31 21:40:00
 	event name: Vandalism

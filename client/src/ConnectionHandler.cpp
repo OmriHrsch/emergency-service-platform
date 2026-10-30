@@ -1,6 +1,5 @@
 #include "../include/ConnectionHandler.h"
 #include "../include/StompFrame.h"
-#include "ConnectionHandler.h"
 
 using boost::asio::ip::tcp;
 
@@ -10,8 +9,8 @@ using std::cerr;
 using std::endl;
 using std::string;
 
-ConnectionHandler::ConnectionHandler(string host, short port) : host_(host), port_(port), io_service_(),
-                                                                socket_(io_service_) {}
+ConnectionHandler::ConnectionHandler(string host, short port) : host_(host), port_(port), io_context_(),
+                                                                socket_(io_context_) {}
 
 ConnectionHandler::~ConnectionHandler() {
 	if (socket_.is_open())
@@ -22,7 +21,7 @@ bool ConnectionHandler::connect() {
 	std::cout << "Starting connect to "
 	          << host_ << ":" << port_ << std::endl;
 	try {
-		tcp::endpoint endpoint(boost::asio::ip::address::from_string(host_), port_); // the server endpoint
+		tcp::endpoint endpoint(boost::asio::ip::make_address(host_), port_); // the server endpoint
 		boost::system::error_code error;
 		socket_.connect(endpoint, error);
 		if (error)
@@ -106,7 +105,6 @@ bool ConnectionHandler::getFrameAscii(std::string &frame, char delimiter) {
 	}
 	return true;
 }
-//login 127.0.0.1:2020 tom tom
 bool ConnectionHandler::sendFrameAscii(const std::string &frame, char delimiter) {
 	bool result = sendBytes(frame.c_str(), frame.length());
 	if (!result) return false;
@@ -136,7 +134,8 @@ void ConnectionHandler::setHostPort(std::string host, short port)
 bool ConnectionHandler::sendFrame(std::string &line)
 {
     if (!sendLine(line)) {return false;}
-	return sendBytes({"\0"}, 1);
+	const char terminator = '\0';
+	return sendBytes(&terminator, 1);
 }
 
 bool ConnectionHandler::readFrame(std::string &line){

@@ -10,7 +10,7 @@ class ConnectionHandler {
 private:
 	std::string host_;
 	short port_;
-	boost::asio::io_service io_service_;   // Provides core I/O functionality
+	boost::asio::io_context io_context_;
 	tcp::socket socket_;
 
 public:

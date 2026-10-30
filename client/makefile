@@ -1,40 +1,36 @@
-CFLAGS:=-c -Wall -Weffc++ -g -std=c++11 -Iinclude
-LDFLAGS:=-lboost_system -lpthread
-# TODO change the makefile for StompEMIlient
-all: clean compile link
+CXX ?= g++
 
-compile:
-	g++ -g -Wall -Weffc++ -std=c++11 -c -Iinclude src/*.cpp -pthread
-	mv *.o bin/ 
+TARGET := bin/StompEMIClient
+SOURCES := $(wildcard src/*.cpp)
+OBJECTS := $(patsubst src/%.cpp,bin/%.o,$(SOURCES))
 
-link:
-	g++ -g -Wall -Weffc++ -std=c++11 -o bin/StompEMIClient bin/*.o -pthread
+CPPFLAGS := -Iinclude
+CXXFLAGS := -g -Wall -Wextra -std=c++11 -pthread
+LDLIBS := -pthread
 
-run:
-	bin/StompEMIClient
+ifeq ($(shell uname -s),Darwin)
+BOOST_PREFIX ?= $(shell brew --prefix boost 2>/dev/null)
+ifneq ($(BOOST_PREFIX),)
+CPPFLAGS += -I$(BOOST_PREFIX)/include
+LDFLAGS += -L$(BOOST_PREFIX)/lib
+endif
+endif
 
-EchoClient: bin/ConnectionHandler.o bin/echoClient.o
-	g++ -o bin/EchoClient bin/ConnectionHandler.o bin/echoClient.o $(LDFLAGS)
+all: $(TARGET)
 
-StompWCIClient: bin/ConnectionHandler.o bin/StompClient.obin/event.o
-	g++ -o bin/StompWCIClient bin/ConnectionHandler.o bin/StompClient.o $(LDFLAGS)
+$(TARGET): $(OBJECTS)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS) $(LDLIBS)
 
-bin/ConnectionHandler.o: src/ConnectionHandler.cpp
-	g++ $(CFLAGS) -o bin/ConnectionHandler.o src/ConnectionHandler.cpp
+bin/%.o: src/%.cpp | bin
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
-bin/echoClient.o: src/echoClient.cpp
-	g++ $(CFLAGS) -o bin/echoClient.o src/echoClient.cpp
+bin:
+	mkdir -p bin
 
-bin/event.o: src/event.cpp
-	g++ $(CFLAGS) -o bin/event.o src/event.cpp
+run: $(TARGET)
+	./$(TARGET)
 
-bin/StompClient.o: src/StompClient.cpp
-	g++ $(CFLAGS) -o bin/StompClient.o src/StompClient.cpp
-
-.PHONY: clean
 clean:
-	rm -f bin/*
+	rm -f $(TARGET) $(OBJECTS)
 
-cleanObj:
-	rm -f bin/*.o
-	
+.PHONY: all run clean
